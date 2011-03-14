@@ -2,8 +2,8 @@
 
 <!-- YUI 3 Component Build File -->
 
-<project name="dp-search" default="local">
-    <description>DP.Search Build File</description>
+<project name="gallery-dp-search" default="local">
+    <description>gallery-dp-search</description>
     <property file="build.properties" />
     <import file="${builddir}/3.x/bootstrap.xml" description="Default Build Properties and Targets" />
 </project>

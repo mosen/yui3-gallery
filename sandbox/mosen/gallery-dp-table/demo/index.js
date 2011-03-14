@@ -1,7 +1,4 @@
-YUI({ 
-	lang: 'en_AU',
-	filter: 'raw'
-}).use('lang', 'array', 'node', 'event', 'io', 'datasource', 'dataschema', 'dp-datatype', 'dp-search', 'dp-table', function(Y) {
+YUI().use('datasource', 'gallery-dp-datatype', 'gallery-dp-table', 'gallery-dp-search', function(Y) {
 	
 	/**
 	 * Render a project name cell, with link to project.
@@ -23,32 +20,32 @@ YUI({
 	
 	function initTable() {
             
-            console.profile();
-		
-		var myDataSource = new Y.DataSource.Local({source: { 
-                        resultCount: 5,
-                        results : [
-                            { id: 1, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '50', name: 'test project 1' },
-                            { id: 2, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '60', name: 'some other project' },
-                            { id: 3, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '10', name: 'again another one' },
-                            { id: 4, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '33', name: 'etc etc' },
-                            { id: 5, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '98', name: 'project number five' }
-                        ]
-                }});
-		myDataSource.plug(Y.Plugin.DataSourceJSONSchema, {
-	        schema: {
+            //console.profile();
+            var myDataSource = new Y.DataSource.Local({source: { 
+                    resultCount: 5,
+                    results : [
+                        { id: 1, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '50', name: 'test project 1' },
+                        { id: 2, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '60', name: 'some other project' },
+                        { id: 3, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '10', name: 'again another one' },
+                        { id: 4, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '33', name: 'etc etc' },
+                        { id: 5, start: '2010-01-01 00:00:00', finish: '2010-12-01 00:00:00', progress: '98', name: 'project number five' }
+                    ]
+            }});
+        
+            myDataSource.plug(Y.Plugin.DataSourceJSONSchema, {
+                schema: {
                     metaFields : { count: "resultCount" },
-	            resultListLocator : "results",
-	            resultFields : [
-                   // TODO - DataType.Date.parse does not support MySQL DATETIME out of the box. extend with this functionality
+                    resultListLocator : "results",
+                    resultFields : [
+                    // DP.DataType.DateTime Was created to natively parse MySQL ISO8601 DateTimes
                     { key:"finish", parser:Y.DP.DataType.DateTime.parse }, 
                     { key:"start", parser:Y.DP.DataType.DateTime.parse },
                     "progress",
                     "name",
                     "id"
-	            ]
-	        }
-	    });
+                    ]
+                }
+            });
 		
 		// 12 cache entries covers all permutations of sorting (single column sort only)
 		myDataSource.plug({fn:Y.Plugin.DataSourceCache, cfg:{max:12}});
@@ -75,7 +72,7 @@ YUI({
 
 		tbl.render();
             
-            console.profileEnd();
+            //console.profileEnd();
 	}
 	
 	//Y.on("available", initTable, "#projects-list-content");

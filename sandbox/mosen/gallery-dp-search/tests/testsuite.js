@@ -130,4 +130,4 @@ YUI().add('dp-search-test', function(Y) {
 
 	Y.Test.Runner.add(suite);
 
-}, '@VERSION@' ,{requires:['test', 'dp-search']});
+}, '@VERSION@' ,{requires:['test', 'gallery-dp-search']});
