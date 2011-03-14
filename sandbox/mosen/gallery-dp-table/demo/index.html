@@ -6,41 +6,33 @@
     <script src="http://yui.yahooapis.com/3.3.0/build/yui/yui-min.js"
         charset="utf-8"></script>
     <script type="text/javascript"
-            src="../../../build/gallery-dp-search/gallery-dp-search-debug.js"></script>
-    <script type="text/javascript"
             src="../../../build/gallery-dp-datatype/gallery-dp-datatype-debug.js"></script>
     <script type="text/javascript"
             src="../../../build/gallery-dp-table/gallery-dp-table-debug.js"></script>
-
     <script type="text/javascript" src="index.js"></script>
     <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
     <title>dp-table demo</title>
 </head>
 <body>
-<div style="clear: both;"></div><br />
-	<div class="yui3-dp-search">
-		<select class="yui3-dp-search-fields">
-			<option value="name">Name</option>
-			<option value="start">Start</option>
-		</select>
-		<input type="text" class="yui3-dp-search-input">
-		<input type="button" class="yui3-dp-search-submit" value="search">
-		<input type="button" class="yui3-dp-search-reset" value="reset">
-	</div>
+    <h1>gallery-dp-table demo</h1>
+    <p>
+        The dp-table widget is designed to be used with an XHR source. It features sorting, selection and custom cell rendering
+        (meaning that you can interpret the cell contents however you like).
+    </p>
 
-	<div id="projects-list-content">
-		<table class="yui3-dp-table">
-			<thead class="yui3-dp-table-headers yui3-dp-table-headers-loading">
-				<tr class="yui3-dp-table-headers-columns">
-					<th class="yui3-dp-table-headers-column" sortKey="name" width="500px">Name</th>
-					<th class="yui3-dp-table-headers-column" sortKey="start" width="100px">Start</th>
-					<th class="yui3-dp-table-headers-column" sortKey="finish" width="100px">Finish</th>
-                                        <th class="yui3-dp-table-headers-column" sortKey="progress" width="200px">Progress</th>
-				</tr>
-			</thead>
-			<tbody class="yui3-dp-table-body yui3-dp-table-body-loading"></tbody>
-		</table>
-	</div>
-<div id="projects-list"></div>
+    <div id="projects-list-content">
+            <table class="yui3-dp-table">
+                    <thead class="yui3-gallery-dp-table-headers yui3-widget-loading">
+                            <tr class="yui3-dp-table-headers-columns">
+                                    <th class="yui3-dp-table-headers-column" sortKey="name" width="500px">Name</th>
+                                    <th class="yui3-dp-table-headers-column" sortKey="start" width="100px">Start</th>
+                                    <th class="yui3-dp-table-headers-column" sortKey="finish" width="100px">Finish</th>
+                                    <th class="yui3-dp-table-headers-column" sortKey="progress" width="200px">Progress</th>
+                            </tr>
+                    </thead>
+                    <tbody class="yui3-dp-table-body yui3-dp-table-body-loading"></tbody>
+            </table>
+    </div>
+    <div id="projects-list"></div>
 </body>
 </html>
