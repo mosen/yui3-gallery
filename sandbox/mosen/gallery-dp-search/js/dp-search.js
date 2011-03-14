@@ -44,10 +44,10 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
          */
         _renderInput : function(contentBox) {
                 if (!this.get('inputNode')) {
-                        var inputNode = Node.create(Y.substitute(this.TEMPLATE_INPUT, { className: this.getClassName('input') }));
-                        this.set('inputNode', inputNode);
+                    var inputNode = Node.create(Y.substitute(this.TEMPLATE_INPUT, { className: this.getClassName('input') }));
+                    this.set('inputNode', inputNode);
 
-                        contentBox.append(inputNode);
+                    contentBox.append(inputNode);
                 }
         },
 
@@ -80,6 +80,7 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
 
         // @see Y.Widget.bindUI
         bindUI : function() {
+                
                 this.get('inputNode').on('focus', this._handleInputFocus, this);
                 this.get('inputNode').on('blur', this._handleInputBlur, this);
 
@@ -87,7 +88,9 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
                 keyEventSpec += "13";
                 this.get('inputNode').on('key', this._handleInputEnterKey, keyEventSpec, this);
 
-                this.get('inputNode').on('keypress', this._handleInputKeyPress, this);
+                if (this.get('timeout') > 0) {
+                    this.get('inputNode').on('keypress', this._handleInputKeyPress, this);
+                }
 
                 Y.one('.yui3-dp-search-reset').on('click', this._handleResetClick, this); // Reset sets value to blank
                 Y.one('.yui3-dp-search-submit').on('click', this._uiSetValue(), this);
@@ -106,7 +109,7 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
          * 
          * @attribute _tipShown
          * @type Boolean
-         * @protected
+         * @private
          */
         _tipShown: false,
 
@@ -156,7 +159,9 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
                 Y.log('gallery-dp-search:_handleInputBlur');
 
                 if (this._tipShown === false) {
-                    this.set('value', this.get('inputNode').get('value'));
+                    if (this.get('searchOnBlur') === true) {
+                        this.set('value', this.get('inputNode').get('value'));
+                    }
                     this._uiSetValue();
                 }
         },
@@ -333,13 +338,24 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
                 /**
                  * Timeout in milliseconds for search to submit the current terms
                  * 
-                 * Submits the current search terms if the timeout specified has elapsed.
+                 * Submits the current search terms if the timeout specified has elapsed. Set to 0 in order to disable this function.
                  * @attribute timeout
                  * @type Integer
                  */
                 timeout : {
-                        value : 150,
-                        validator : Lang.isNumber
+                    value : 150,
+                    validator : Lang.isNumber
+                },
+                
+                /**
+                 * Whether to fire a search event when the input box loses focus
+                 * 
+                 * @attribute searchOnBlur
+                 * @type Boolean
+                 */
+                searchOnBlur : {
+                    value : true,
+                    validator : Lang.isBoolean
                 },
 
                 /**
