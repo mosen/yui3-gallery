@@ -3,13 +3,13 @@
  * You can do simple calculations or provide a function to render content based on the recordset.
  * 
  * @module dp-datatable-plugin-footer
+ * @requires lang, array, base, node
  */
 
-YUI.add('dp-datatable-plugin-footer', function(Y) {
+//YUI.add('dp-datatable-plugin-footer', function(Y) {
 	
 	var Lang = Y.Lang,
-		Node = Y.Node,
-		YgetClassName = Y.ClassNameManager.getClassName;
+            Node = Y.Node;
 	
 	/**
 	 * The DataTable footer plugin allows you to display any value in the footer section of the table.
@@ -19,18 +19,18 @@ YUI.add('dp-datatable-plugin-footer', function(Y) {
 	 * footer columns not based on data, or aggregated from multiple columns.
 	 * 
 	 * @class DataTableFooter
-	 * @extends Plugin
-	 * @augments DataTable
+	 * @extends Y.Base.Plugin
+	 * @augments Y.DataTable
 	 * @param config {Object} Configuration object literal with initial attribute values
 	 * @constructor
 	 */
-	Y.namespace('DP').DataTableFooter = Y.Base.create( 'dp-datatable-plugin-footer', Y.Plugin.Base, [], {
+	Y.namespace('DP').DataTableFooter = Y.Base.create( 'gallery-dp-datatable-plugin-footer', Y.Plugin.Base, [], {
 		
 		initializer: function(config) {
 			Y.log('initializer', 'info', 'DataTableFooter');
 			
 			this.afterHostMethod("render", this._renderFooter);        
-            this.afterHostEvent("recordsetChange", this._renderColumnValues);
+                        this.afterHostEvent("recordsetChange", this._renderColumnValues);
 		},
 		
 		destructor : function() {
@@ -58,16 +58,16 @@ YUI.add('dp-datatable-plugin-footer', function(Y) {
 		/**
 		 * @method _renderColumnValues
 		 * @description Render the footer definition. Occurs every time the recordSetChange event is fired by the host.
+                 * @private
 		 * @return undefined
 		 */
 		_renderColumnValues : function() {
 			Y.log('_renderColumnValues', 'info', 'DataTableFooter');
 			
 			var columns = this.get('columnset'),
-				columnNodes = Array(),
-				columnNode,
-				v = "",
-				span = 1;
+                            columnNode,
+                            v = "",
+                            span = 1;
 			
 			Y.Array.each(columns, function(c) {
 				
@@ -101,18 +101,21 @@ YUI.add('dp-datatable-plugin-footer', function(Y) {
 		 * @description Reference to the created TFOOT node
 		 * @type Node
 		 * @default undefined
+                 * @private
 		 */
 		_tfoot : undefined,
 		
 		/**
 		 * @property NAME
 		 * @type String
+                 * @protected
 		 */
 		NAME : "datatableFooter",
 		
 		/**
 		 * @property NS
 		 * @type String
+                 * @protected
 		 */
 		NS : "dtfoot",
 		
@@ -120,8 +123,19 @@ YUI.add('dp-datatable-plugin-footer', function(Y) {
 		ATTRS : {
 			
 			/**
+                         * A couple of example values for this configuration attribute: <br />
+                         * <br />
+                         * One column that contains only the word "String" but spans 2 columns of the table. <br />
+                         * <code>
+                         * [ { value: "String", span: 2 } ] 
+                         * </code>
+                         * <br /><br />
+                         * One column that executes a function to get its contents, the function takes the RecordSet instance of the Y.DataTable as its only parameter <br />
+                         * <code>
+                         * [ { value: fnCalculateTotal } ]
+                         * </code>
+                         *
 			 * @attribute columnset
-			 * @description Column definitions for the footer section.
 			 * @type Array
 			 */
 			columnset : {
@@ -147,4 +161,4 @@ YUI.add('dp-datatable-plugin-footer', function(Y) {
 			}
 		}
 	});
-}, '@VERSION@' ,{requires:['base']});
+//}, '@VERSION@' ,{requires:['base']});
