@@ -66,8 +66,11 @@
 			
 			var columns = this.get('columnset'),
                             columnNode,
+                            trContainer = this._tfoot.one('tr'),
                             v = "",
                             span = 1;
+                            
+                        trContainer.set('content', '');
 			
 			Y.Array.each(columns, function(c) {
 				
@@ -90,7 +93,7 @@
 					value: v
 				}));
 
-				this._tfoot.one('tr').append(columnNode);
+				trContainer.append(columnNode);
 			}, this);
 		}
 		
