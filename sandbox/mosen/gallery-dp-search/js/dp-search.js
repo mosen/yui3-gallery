@@ -51,6 +51,7 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
                 }
         },
 
+        // TODO : optional plugin api for adding a pull down which shows a field selector or previous searches.
         _renderFieldSelector : function() {
 
         },
@@ -181,6 +182,12 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
 
         /**
          * Handle input got keypress (any key)
+         * 
+         * Starts or resets the countdown timer to auto search
+         * 
+         * @method _handleInputKeyPress
+         * @param {Event} e Event facade
+         * @protected
          */
         _handleInputKeyPress : function(e) {
                 Y.log('gallery-dp-search:_handleInputKeyPress');
@@ -189,6 +196,15 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
                 this._currentTimeoutID = setTimeout(Y.bind(this._handleTimeoutElapsed, this), this.get('timeout'));
         },
 
+        /**
+         * Handle timeout elapsed
+         * 
+         * Sets the value because the user stopped typing
+         * 
+         * @method _handleTimeoutElapsed
+         * @param {Event} e Event facade
+         * @protected
+         */
         _handleTimeoutElapsed : function(e) {
 
             Y.log('gallery-dp-search:_handleTimeoutElapsed');
@@ -196,7 +212,7 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
         },
 
         /**
-         * Handle click on reset.
+         * Handle click on reset. Sets value back to empty.
          * 
          * @method _handleResetClick
          * @protected
@@ -212,7 +228,7 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
          * @protected
          */
         _afterValueChange : function() {
-                Y.log('gallery-dp-search:_afterValueChange');
+                Y.log('_afterValueChange', 'info', 'gallery-dp-search');
 
                 this._uiSetValue();
 
@@ -251,6 +267,7 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
 
         /**
          * Set the UI to reflect the 'field' attribute.
+         * @todo Stub method - update field selector
          */
         _uiSetField : function() {
                 //var field = this.get('field');
@@ -258,10 +275,12 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
         },
 
         /**
-         * Default handler for queryUpdate : do nothing.
+         * Default handler for queryUpdate
+         * @method _defQueryUpdateFn
+         * @param {Event} e Event facade
          */
-        _defQueryUpdateFn : function() {
-                Y.log('gallery-dp-search:_defParameterChangeFn');
+        _defQueryUpdateFn : function(e) {
+                Y.log('_defQueryUpdateFn', 'info', 'gallery-dp-search');
         },
 
         /**
@@ -299,7 +318,9 @@ Y.namespace('DP').Search = Y.Base.create('dp-search', Y.Widget, [], {
                 value : function(srcNode) {
                         var input = srcNode.one('.yui3-dp-search-input');
                         if (input) {
-                                return input.get('value');
+                            return input.get('value');
+                        } else {
+                            return '';   
                         }
                 }
         },
