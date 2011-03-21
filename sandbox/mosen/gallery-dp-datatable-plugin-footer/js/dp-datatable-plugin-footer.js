@@ -162,6 +162,37 @@
 			tdTemplate : {
 				value : "<td class=\"{tdClassName}\" colspan=\"{tdColSpan}\"><div class=\"{linerClassName}\">{value}</div></td>"
 			}
-		}
+		},
+                
+                /**
+                 * @method calculatePriceTotal
+                 * @description Helper method that totals all values for one column, and then presents the result as a monetary value.
+                 * @param {String} key Key to use in the recordset for calculating the total
+                 * @param {Object} format Literal object of options to Y.DataType.Number.format that will be used, defaults to a standard dollars output
+                 * @return Function A function seeded with the specified key that will calculate the column total and present it as a monetary value.
+                 */
+                calculatePriceTotal : function(key, format) {
+                    return function(o) {
+			Y.log('calculatePriceTotal', 'info', 'DataTableFooter');
+			
+			var total = 0,
+                            vals = o.getValuesByKey(key);
+		
+			Y.Array.each(vals, function(v) { 
+				total += Y.DataType.Number.parse(v); 
+			});
+                        
+                        if (!Lang.isObject(format)) {
+                            format = {
+				prefix: "$",
+				thousandsSeparator: ",",
+				decimalSeparator: ".",
+				decimalPlaces: 2
+                            };
+                        }
+			
+			return Y.DataType.Number.format(total, format);			
+                    };
+                }
 	});
 //}, '@VERSION@' ,{requires:['base']});
