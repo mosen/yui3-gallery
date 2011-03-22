@@ -1,3 +1,5 @@
+YUI.add('gallery-dp-timeline', function(Y) {
+
 //YUI.add('dp-timeline', function(Y) {
 	
         
@@ -9,7 +11,6 @@
     Y.namespace('DP').Timeline = Y.Base.create( 'gallery-dp-timeline', Y.Widget, [], {
         
         initializer: function() {
-            Y.log("init", "info", "Y.DP.Timeline");
         
         },
 
@@ -37,7 +38,6 @@
         syncUI : function() {
             var events = this.get('events');
             console.dir(events);
-            Y.log(this.get('events'), "info", "Y.DP.Timeline");
         },
         
         /**
@@ -46,7 +46,6 @@
          * @private
          */
         _renderHeadings : function() {
-            Y.log("_renderHeadings", "info", "Y.DP.Timeline");
             
             var nodeDayContainer = Node.create(Y.substitute(this.get('tplDayContainer'), {
                className : this.getClassName('day', 'container')
@@ -61,7 +60,6 @@
          * @private
          */
         _renderHeadingsDays : function() {
-            Y.log("_renderHeadingsDays", "info", "Y.DP.Timeline");
             
             var currentDate = this.get('date'),
                 labelDate,
@@ -93,7 +91,6 @@
          * @private
          */
         _renderEventContainer : function() {
-            Y.log("_renderEventContainer", "info", "Y.DP.Timeline");
             
             this._nodeEventContainer = Node.create(Y.substitute(this.get('tplEventContainer'), {
                 className : this.getClassName('event', 'container')
@@ -107,7 +104,6 @@
          * @private
          */
         _renderEvents : function() {
-            Y.log("_renderEvents", "info", "Y.DP.Timeline");
 
             var startingDate = this.get('date');
             this.clearDateTime(startingDate);
@@ -128,7 +124,6 @@
          * @private
          */
         _renderEvent : function(e) {
-            Y.log("_renderEvent", "info", "Y.DP.Timeline");
             
             var nodeEvt = Node.create(Y.substitute(this.get('tplEvent'), {
                 className : this.getClassName('event'),
@@ -150,7 +145,6 @@
          * @private
          */
         _renderBackgroundContainer : function() {
-            Y.log("_renderBackgroundContainer", "info", "Y.DP.Timeline");
             
             var nodeBg = Node.create(Y.substitute(this.get('tplBackgroundContainer'), {
                 className : this.getClassName('background')
@@ -165,7 +159,6 @@
          * @private
          */
         _renderBackgroundHighlights : function() {
-            Y.log("_renderBackgroundHighlights", "info", "Y.DP.Timeline");
             
             
         },
@@ -177,7 +170,6 @@
          * @private
          */
         dateToOffset : function(d) {
-            //Y.log("dateToOffset", "info", "Y.DP.Timeline");
             
             var dayInMilliseconds = 1000*60*60*24,
                 timeDiff = d.getTime() - this.get('date').getTime(),
@@ -195,7 +187,6 @@
          * @private
          */
         rangeToDuration : function(start, finish) {
-            Y.log("rangeToDuration", "info", "Y.DP.Timeline");
 
             // Adding a day to the duration because when we say start now finish now, we mean one day of duration
             // Because that is the minimum duration on the timeline
@@ -214,7 +205,6 @@
          * @public
          */
         clearDateTime : function(d) {
-            Y.log("clearDateTime", "info", "Y.DP.Timeline");
             
             d.setHours(0);
             d.setMinutes(0);
@@ -232,14 +222,12 @@
          * @private
          */
         _calculateOverlaps : function(e, events) {
-            Y.log("_calculateOverlaps:" + e.summary, "info", "Y.DP.Timeline");
             
             var freeslots = Array();
   
                 Y.Array.each(events, function(ev) {
                     if (e !== ev) {  
                         if ( (e.start >= ev.finish || e.finish <= ev.start) ) {
-                           Y.log("_calculateOverlaps:" + e.summary + " does not overlap " + ev.summary, "info", "Y.DP.Timeline");
                            
 
                            //
@@ -248,7 +236,6 @@
                            //ev.overlap = overlapcount;
                            //overlapcount++;
                         } else {
-                            Y.log("_calculateOverlaps:" + e.summary + " overlaps " + ev.summary, "info", "Y.DP.Timeline");
                         }
                     }
                 }, this);
@@ -256,7 +243,6 @@
         
         /*
                _calculateOverlaps : function(e, events) {
-            Y.log("_calculateOverlaps:" + e.summary, "info", "Y.DP.Timeline");
             
             var overlapcount = 0;
             
@@ -389,12 +375,10 @@
                     Y.Array.each(value, function(v) {
                         if (Lang.isString(v.start)) {
                             v.start = DataType.Date.parse(v.start);
-                            Y.log(v.start , "info", "Y.DP.Timeline");
                         }
                         
                         if (Lang.isString(v.finish)) {
                             v.finish = DataType.Date.parse(v.finish);
-                            Y.log(v.finish, "info", "Y.DP.Timeline");
                         }
                         
                         v.overlap = idx;
@@ -416,3 +400,6 @@
     });
             
 //}, '@VERSION@' ,{requires:['base']});
+
+
+}, '@VERSION@' ,{requires:['base', 'widget', 'substitute', 'node', 'datatype']});

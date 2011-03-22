@@ -1,3 +1,5 @@
+YUI.add('gallery-dp-timeline', function(Y) {
+
 //YUI.add('dp-timeline', function(Y) {
 	
         
@@ -416,3 +418,6 @@
     });
             
 //}, '@VERSION@' ,{requires:['base']});
+
+
+}, '@VERSION@' ,{requires:['base', 'widget', 'substitute', 'node', 'datatype']});

@@ -5,12 +5,22 @@
 
 .yui3-gallery-dp-timeline-event-container {
     position: relative;
+    z-index: 30;
     padding-top: 0.25em;
 }
 
 .yui3-gallery-dp-timeline-day-container {
     position: relative;
+    z-index: 20;
     height: 20px;
+}
+
+.yui3-gallery-dp-timeline .yui3-gallery-dp-timeline-background {
+    position: absolute;
+    z-index: 10;
+    min-height: 400px;
+    width: 800px;
+    background-color: #dddddd;
 }
 
 .yui3-gallery-dp-timeline .yui3-gallery-dp-timeline-day {
@@ -34,6 +44,7 @@
 
 
 
+
 .yui3-skin-sam .yui3-gallery-dp-timeline .yui3-gallery-dp-timeline-event {
     padding: 0.25em 0em 0.25em 0em;
     
@@ -44,7 +55,7 @@
     border-style: solid;
     border-width: 0px 2px 2px 0px;
     border-color: #0074a5;
-
+    border-radius: 4px 0px 4px 0px;
     
     background-color: #0e84b5;
     color: #EEEEEE;
