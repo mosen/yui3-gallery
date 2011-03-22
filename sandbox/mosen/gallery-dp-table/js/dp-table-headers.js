@@ -28,7 +28,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create('dp-table-headers', Y.Widget, [],
      * @param config {Object} Configuration object.
      */
     initializer : function(config) {
-        Y.log('gallery-dp-table-headers:init');
+        Y.log('init', 'info', 'Y.DP.TableHeaders');
 
         // we require the table as srcNode because it is the only valid element to wrap in divs
         //this._theadNode = config.theadNode;
@@ -89,7 +89,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create('dp-table-headers', Y.Widget, [],
 
     // @see Widget.syncUI
     syncUI : function() {
-        Y.log('gallery-dp-table-headers:syncUI');
+        
     },
 
     /**
@@ -133,7 +133,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create('dp-table-headers', Y.Widget, [],
      * @param e {Event}
      */
     _defSortFn : function(e) {
-            Y.log('gallery-dp-table-headers:_defSortFn');
+            Y.log('_defSortFn', 'info', 'Y.DP.TableHeaders');
 
             this.sort(e.headerTarget);
     },
