@@ -130,11 +130,24 @@ YUI.add('gallery-dp-timeline', function(Y) {
                 titleClassName : this.getClassName('event', 'title'),
                 title : e.summary
                 })),
-                duration = this.rangeToDuration(e.start, e.finish);
+                duration = this.rangeToDuration(e.start, e.finish),
+                leftOffset = this.dateToOffset(e.start),
+                eventWidth = this.get('dayWidth') * duration,
+                rightOffset = leftOffset + eventWidth,
+                freeSlot = this._getFreeSlot(e, leftOffset),
+                topOffset = freeSlot * (this.get('eventHeight')),
+                slots = this.get('slots');
             
-            nodeEvt.set('style.left', this.dateToOffset(e.start) + 'px');
-            nodeEvt.set('style.top', (e.overlap * this.get('eventHeight')) + 'px');
-            nodeEvt.set('style.width', (this.get('dayWidth') * duration) + 'px');
+            e.slot = freeSlot;
+            slots[freeSlot] = rightOffset;
+            //this.set('slots', slots);
+            //this.get('slots')[freeSlot] = leftOffset;
+           
+            
+            
+            nodeEvt.set('style.left', leftOffset + 'px');
+            nodeEvt.set('style.top', topOffset + 'px');
+            nodeEvt.set('style.width', eventWidth + 'px');
             
             this._nodeEventContainer.append(nodeEvt);
         },
@@ -215,56 +228,27 @@ YUI.add('gallery-dp-timeline', function(Y) {
         },
         
         /**
-         * @method _calculateOverlaps
-         * @description Calculate date ranges with overlaps and assign them an index which then determines how those events get stacked on the y-axis
-         * @param e {Object} Object literal of a single event to calculate for overlaps
-         * @param events {Array} Array of object literals for every event
+         * @method _getFreeSlot
+         * @description Get the first available slot if this event overlaps
          * @private
          */
-        _calculateOverlaps : function(e, events) {
+        _getFreeSlot : function(e, leftedge) {
             
-            var freeslots = Array();
-  
-                Y.Array.each(events, function(ev) {
-                    if (e !== ev) {  
-                        if ( (e.start >= ev.finish || e.finish <= ev.start) ) {
-                           
-
-                           //
-                           //
-                           //
-                           //ev.overlap = overlapcount;
-                           //overlapcount++;
-                        } else {
-                        }
-                    }
-                }, this);
-        },
-        
-        /*
-               _calculateOverlaps : function(e, events) {
+            var slots = this.get('slots');
             
-            var overlapcount = 0;
-            
-            // Already part of a calculation
-            
-            if (e.overlap !== undefined) {
-                return null;
-            } else {
-                e.overlap = overlapcount;
-                overlapcount++;
+            if (Lang.isNumber(e.slot)) {
+                return e.slot;
             }
             
-            Y.Array.each(events, function(ev) {
-                if (e.start > ev.start || e.finish < ev.finish) {
-                   //ev.overlap = overlapcount;
-                   //overlapcount++;
-                   ev.overlap = e.overlap + 1;
+            for (var i = 0; i < slots.length; i++) {
+                if (slots[i] <= leftedge) {
+                    break;
+                } else {
                 }
-            }, this);
+            }
             
-            return null;
-        },*/
+            return i;
+        },
         
         /**
          * @property _nodeDays
@@ -361,6 +345,15 @@ YUI.add('gallery-dp-timeline', function(Y) {
             },
             
             /**
+             * @attribute slots
+             * @description Hold the leftmost pixel of the rightmost event per slot to determine free slots
+             * @type Array
+             */
+            slots : {
+                value : Array()
+            },
+            
+            /**
              * @attribute events
              * @description Array of events to be rendered
              * @type Array
@@ -368,8 +361,6 @@ YUI.add('gallery-dp-timeline', function(Y) {
             events : {
                 value : Array(),
                 setter : function(value) {
-                    
-                    var idx = 0;
                     
                     // Normalise dates supplied
                     Y.Array.each(value, function(v) {
@@ -380,15 +371,13 @@ YUI.add('gallery-dp-timeline', function(Y) {
                         if (Lang.isString(v.finish)) {
                             v.finish = DataType.Date.parse(v.finish);
                         }
-                        
-                        v.overlap = idx;
-                        idx++;
                     }, this);
                     
-                    
+                    // Only calculate overlapping events on render
+                    /*
                     Y.Array.each(value, function(v) {
                         this._calculateOverlaps(v, value);
-                    }, this);                    
+                    }, this);*/                    
                     
                 }
             }
