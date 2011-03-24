@@ -10,9 +10,9 @@ YUI().use('gallery-dp-timeline', 'console', function(Y) {
             date: new Date(),
             length: 9,
             events: [
-                {start: '2011-03-25', finish: '2011-03-27', summary: 'SUNA 78910'},
-                {start: '2011-03-24', finish: '2011-03-25', summary: 'LINA 76502'},
-                {start: '2011-03-22', finish: '2011-03-27', summary: 'CLOR 99999'},
+                {start: '2011-03-25', finish: '2011-03-27', summary: 'Project A'},
+                {start: '2011-03-24', finish: '2011-03-25', summary: 'Project B'},
+                {start: '2011-03-22', finish: '2011-03-27', summary: 'Project C'},
                 {start: '2011-03-23', finish: '2011-03-29', summary: 'Project D'},
                 {start: '2011-03-24', finish: '2011-03-25', summary: 'Project E'},
                 {start: '2011-03-28', finish: '2011-03-28', summary: 'Project F'},

@@ -53,7 +53,9 @@
             
             // Events
             this._renderEventContainer();
-            this._renderEvents();
+            
+            // Does not happen until datasource provides us with information
+            //this._renderEvents();
             
             this.get('contentBox').append(this._nodeDayContainer);
             this.get('contentBox').append(this._nodeEventContainer);
@@ -67,6 +69,7 @@
          */
         bindUI : function() {
             this.after('dateChange', this._afterDateChange);
+            this.after('eventsChange', this._uiSetEvents);
         },
 
         /**
@@ -78,6 +81,7 @@
             Y.log("This timeline will finish on " + this.getEndDate(), "info", "Y.DP.Timeline");
             
             this.get('boundingBox').set('style.width', this.get('length') * this.get('dayWidth') + 'px');
+            this._renderEvents();
         },
         
         // Rendering helper methods
@@ -257,7 +261,7 @@
             }, this);
         },
   
-          /**
+        /**
          * @method _getFreeSlot
          * @description Get the first available slot if this event overlaps
          * @private
@@ -293,6 +297,12 @@
         afterDateChange : function() {
             Y.log("afterDateChange", "info", "Y.DP.Timeline");
           
+        },
+        
+        _uiSetEvents : function() {
+            Y.log("_uiSetEvents", "info", "Y.DP.Timeline");
+            
+            this._renderEvents();
         },
         
         // Date math functions
@@ -457,8 +467,8 @@
             },
             
             /**
-             * @attribute dayWidth
              * @description Width of each day label
+             * @attribute dayWidth
              * @type Number
              */
             dayWidth : {
@@ -467,8 +477,8 @@
             },
             
             /**
-             * @attribute eventHeight
              * @description Height of each event
+             * @attribute eventHeight
              * @type Number
              */
             eventHeight : {
@@ -477,8 +487,8 @@
             },
             
             /**
-             * @attribute date
              * @description Starting date of the timeline
+             * @attribute date
              * @type Date
              */
             date : {
@@ -486,8 +496,8 @@
             },
             
             /**
-             * @attribute endDate
              * @description The last date shown in the timeline
+             * @attribute endDate
              * @type Date
              */
             endDate : {
@@ -495,8 +505,8 @@
             },
             
             /**
-             * @attribute length
              * @description length of the timeline in days
+             * @attribute length
              * @type Number
              */
             length : {
@@ -505,8 +515,8 @@
             },
             
             /**
-             * @attribute slots
              * @description Hold the leftmost pixel of the rightmost event per slot to determine free slots
+             * @attribute slots
              * @type Array
              */
             slots : {
@@ -515,8 +525,9 @@
             },
             
             /**
-             * @attribute gutter
              * @description Size of the gutter in pixels that lies between each slot
+             * @attribute gutter
+             *
              * @type Number
              */
             gutter : {
@@ -525,8 +536,8 @@
             },
             
             /**
-             * @attribute events
              * @description Array of events to be rendered
+             * @attribute events
              * @type Array
              */
             events : {
