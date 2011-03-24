@@ -31,11 +31,15 @@
                 }
             },
 
-            destructor : function() {
-              
-
-            },
+            destructor : function() {},
             
+            /**
+             * Load the data from the specified datasource
+             * 
+             * @method load
+             * @param config {Object} [optional] datasource configuration
+             * @public
+             */
             load : function(config) {
                 
                 config = config || {};
@@ -52,6 +56,13 @@
                 }
             },
             
+            /**
+             * Set the host data from a datasource response
+             * 
+             * @method onDataReturnInitializeTimeline
+             * @param o {Object} datasource response object
+             * @public
+             */
             onDataReturnInitializeTimeline : function(o) {
                 Y.log("onDataReturnInitializeTimeline", "info", "Y.DP.TimelineDataSource");
                 
