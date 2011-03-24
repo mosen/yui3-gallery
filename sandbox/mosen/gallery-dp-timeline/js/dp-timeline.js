@@ -1,28 +1,57 @@
 //YUI.add('dp-timeline', function(Y) {
 	
-        
+    // shortcuts and constants
     var Lang = Y.Lang,
         Node = Y.Node,
         DataType = Y.DataType;
 
 
+    /**
+     * @description gallery-dp-timeline presents a static timeline
+     * @module gallery-dp-timeline
+     * @class Y.DP.Timeline
+     * @extends Widget
+     */
     Y.namespace('DP').Timeline = Y.Base.create( 'gallery-dp-timeline', Y.Widget, [], {
         
+        /**
+         * @method initializer
+         * @param config {Object} Configuration object
+         * @protected
+         * @constructor
+         */
         initializer: function() {
             Y.log("init", "info", "Y.DP.Timeline");
         
         },
 
+        /**
+         * Destructor lifecycle implementation
+         *
+         * @method destructor
+         * @protected
+         */
         destructor : function() {
 
         },
 
+        /**
+         * Create the DOM structure.
+         *
+         * @method renderUI
+         * @protected
+         */
         renderUI : function() {
+            
+            // Timeline headings, Date labels
             this._renderHeadings();
             this._renderHeadingsDays();
             
+            // Background, Background highlights / markers
             this._renderBackgroundContainer();
+            this._renderBackgroundHighlights();
             
+            // Events
             this._renderEventContainer();
             this._renderEvents();
             
@@ -30,19 +59,32 @@
             this.get('contentBox').append(this._nodeEventContainer);
         },
 
+        /**
+         * Bind events to the ui
+         * 
+         * @method bindUI
+         * @protected
+         */
         bindUI : function() {
-
+            this.after('dateChange', this._afterDateChange);
         },
 
+        /**
+         * Synchronizes the DOM state with the attribute settings
+         *
+         * @method syncUI
+         */
         syncUI : function() {
-            var events = this.get('events');
-            console.dir(events);
-            Y.log(this.get('events'), "info", "Y.DP.Timeline");
+            Y.log("This timeline will finish on " + this.getEndDate(), "info", "Y.DP.Timeline");
+            
+            this.get('boundingBox').set('style.width', this.get('length') * this.get('dayWidth') + 'px');
         },
         
+        // Rendering helper methods
+        
         /**
-         * @method _renderHeadings
          * @description Render the containers for the headings
+         * @method _renderHeadings
          * @private
          */
         _renderHeadings : function() {
@@ -56,8 +98,8 @@
         },
         
         /**
-         * @method _renderHeadingsDays
          * @description Render all of the day labels
+         * @method _renderHeadingsDays
          * @private
          */
         _renderHeadingsDays : function() {
@@ -77,19 +119,21 @@
                     className : this.getClassName('day'),
                     labelClassName : this.getClassName('day', 'label'),
                     label : DataType.Date.format(labelDate, {format:"%a %e"})
-                }));
+                })),
+                    leftOffset = this.dateToOffset(labelDate);
                 
-                lblDay.set('style.left', this.dateToOffset(labelDate) + 'px');
+                lblDay.set('style.left', leftOffset + 'px');
                 lblDay.set('style.width', this.get('dayWidth') + 'px');
 
-                this._nodeDayContainer.append(lblDay);               
+                this._nodeDayContainer.append(lblDay);
+                this._dates.push({ date: labelDate, left: leftOffset });
             }
             
         },
         
         /**
-         * @method _renderEventContainer
          * @description Render the container that will hold events
+         * @method _renderEventContainer
          * @private
          */
         _renderEventContainer : function() {
@@ -109,15 +153,26 @@
         _renderEvents : function() {
             Y.log("_renderEvents", "info", "Y.DP.Timeline");
 
-            var startingDate = this.get('date');
+            var startingDate = this.get('date'),
+                endingDate = this.getEndDate();
+                
             this.clearDateTime(startingDate);
+            this.clearDateTime(endingDate);
             
             Y.Array.each(this.get('events'), function (e) {
+                
                 if (e.start < startingDate) {
-                    
-                } else {
-                    this._renderEvent(e);
+                    e.start = startingDate;
+                    e.clippedLeft = true;
+                } 
+                
+                if (e.finish > endingDate) {   
+                    e.finish = endingDate;
+                    e.clippedRight = true;
                 }
+                    
+                this._renderEvent(e);
+                
             }, this);
         },
 
@@ -131,7 +186,9 @@
             Y.log("_renderEvent", "info", "Y.DP.Timeline");
             
             var nodeEvt = Node.create(Y.substitute(this.get('tplEvent'), {
-                className : this.getClassName('event'),
+                outerClassName : this.getClassName('event'),
+                className : this.getClassName('event', 'content'),
+                leftCapClassName : this.getClassName('event', 'left'),
                 titleClassName : this.getClassName('event', 'title'),
                 title : e.summary
                 })),
@@ -140,13 +197,11 @@
                 eventWidth = this.get('dayWidth') * duration,
                 rightOffset = leftOffset + eventWidth,
                 freeSlot = this._getFreeSlot(e, leftOffset),
-                topOffset = freeSlot * (this.get('eventHeight')),
+                topOffset = freeSlot * (this.get('eventHeight')) + freeSlot * this.get('gutter'),
                 slots = this.get('slots');
             
             e.slot = freeSlot;
             slots[freeSlot] = rightOffset;
-            //this.set('slots', slots);
-            //this.get('slots')[freeSlot] = leftOffset;
            
             
             Y.log("_renderEvent:" + e.summary + " slot: " + e.slot , "info", "Y.DP.Timeline");
@@ -154,6 +209,8 @@
             nodeEvt.set('style.left', leftOffset + 'px');
             nodeEvt.set('style.top', topOffset + 'px');
             nodeEvt.set('style.width', eventWidth + 'px');
+            
+            nodeEvt.one('.' + this.getClassName('event', 'content')).set('style.height', this.get('eventHeight'));
             
             this._nodeEventContainer.append(nodeEvt);
         },
@@ -169,8 +226,10 @@
             var nodeBg = Node.create(Y.substitute(this.get('tplBackgroundContainer'), {
                 className : this.getClassName('background')
             }));
+            nodeBg.set('style.width', this.get('length') * this.get('dayWidth') + 'px');
             
-            this.get('contentBox').append(nodeBg);
+            this._nodeBackgroundContainer = nodeBg;
+            this.get('contentBox').append(this._nodeBackgroundContainer);
         },
         
         /**
@@ -181,7 +240,81 @@
         _renderBackgroundHighlights : function() {
             Y.log("_renderBackgroundHighlights", "info", "Y.DP.Timeline");
             
+            Y.Array.each(this._dates, function(d){
             
+                if (this.isDatePublicHoliday(d.date)) {
+                    Y.log("is public holiday :" + d.date, "info", "Y.DP.Timeline");
+
+                    var nodeBgHl = Node.create(Y.substitute(this.get('tplBackgroundHighlight'), {
+                        className : this.getClassName('background', 'highlight')
+                    }));
+                    nodeBgHl.set('style.left', this.dateToOffset(d.date) + 'px');
+                    nodeBgHl.set('style.width', this.get('dayWidth') + 'px');
+
+                    this._nodeBackgroundContainer.append(nodeBgHl);
+                }
+            
+            }, this);
+        },
+  
+          /**
+         * @method _getFreeSlot
+         * @description Get the first available slot if this event overlaps
+         * @private
+         */
+        _getFreeSlot : function(e, leftedge) {
+            Y.log("_getFreeSlot: " + e.summary, "info", "Y.DP.Timeline");
+            
+            var slots = this.get('slots');
+            
+            if (Lang.isNumber(e.slot)) {
+                return e.slot;
+            }
+            
+            for (var i = 0; i < slots.length; i++) {
+                if (slots[i] <= leftedge) {
+                    //Y.log("_getFreeSlot: Found free slot " + i + " because slot rightedge was " + slots[i] + " vs our leftedge " + leftedge, "info", "Y.DP.Timeline");
+                    break;
+                } else {
+                    //Y.log("_getFreeSlot: Cant use slot " + i + " because slot rightedge was " + slots[i] + " vs our leftedge " + leftedge, "info", "Y.DP.Timeline");
+                }
+            }
+            
+            return i;
+        },
+  
+        // ATTR change hooks
+        
+        /**
+         * @method afterDateChange
+         * @description Handle date change, update UI
+         * @private
+         */
+        afterDateChange : function() {
+            Y.log("afterDateChange", "info", "Y.DP.Timeline");
+          
+        },
+        
+        // Date math functions
+        
+        /**
+         * @method getEndDate
+         * @description Get the last date that should be shown on the timeline
+         * @return Date Ending date for the timeline
+         * @public
+         */
+        getEndDate : function() {
+            Y.log("getEndDate", "info", "Y.DP.Timeline");
+            
+            var d = this.get('date'),
+                endDate = new Date();
+                
+            endDate.setTime(d.getTime());
+            
+            // One day is deducted because the word length implies that the starting day is included in that range
+            endDate.setDate(endDate.getDate() + (this.get('length') - 1)); 
+            
+            return endDate;
         },
         
         /**
@@ -199,6 +332,24 @@
             
             return timeDiffDays * this.get('dayWidth');
         },
+
+        /**
+         * @method isDatePublicHoliday
+         * @description Determine if the given date is a public holiday or not
+         * @param d {Date} Date to examine
+         * @todo Support alternate datasource for public holidays in addition to fixed holidays
+         * @return boolean True if date is a public holiday
+         * @private
+         */
+        isDatePublicHoliday : function(d) {
+            //Y.log("isDatePublicHoliday", "info", "Y.DP.Timeline");
+            
+            if (d.getDay() === 0 || d.getDay() === 6) {
+                return true;
+            } else {
+                return false;
+            }
+        },
         
         /**
          * @method rangeToDuration
@@ -209,7 +360,7 @@
          * @private
          */
         rangeToDuration : function(start, finish) {
-            Y.log("rangeToDuration", "info", "Y.DP.Timeline");
+            //Y.log("rangeToDuration", "info", "Y.DP.Timeline");
 
             // Adding a day to the duration because when we say start now finish now, we mean one day of duration
             // Because that is the minimum duration on the timeline
@@ -239,37 +390,11 @@
         },
         
         /**
-         * @method _getFreeSlot
-         * @description Get the first available slot if this event overlaps
+         * @property _dates
+         * @description Array containing information about dates shown
          * @private
          */
-        _getFreeSlot : function(e, leftedge) {
-            Y.log("_getFreeSlot: " + e.summary, "info", "Y.DP.Timeline");
-            
-            var slots = this.get('slots');
-            
-            if (Lang.isNumber(e.slot)) {
-                return e.slot;
-            }
-            
-            for (var i = 0; i < slots.length; i++) {
-                if (slots[i] <= leftedge) {
-                    Y.log("_getFreeSlot: Found free slot " + i + " because slot rightedge was " + slots[i] + " vs our leftedge " + leftedge, "info", "Y.DP.Timeline");
-                    break;
-                } else {
-                    Y.log("_getFreeSlot: Cant use slot " + i + " because slot rightedge was " + slots[i] + " vs our leftedge " + leftedge, "info", "Y.DP.Timeline");
-                }
-            }
-            
-            return i;
-        },
-        
-        /**
-         * @property _nodeDays
-         * @description Array containing nodes for each of the day labels
-         * @private
-         */
-        _nodeDays : Array()
+        _dates : Array()
 
     }, {
         // @see Y.Widget.NAME
@@ -310,7 +435,7 @@
              * @type String
              */
             tplEvent : {
-                value : '<div class="{className}"><span class="{titleClassName}">{title}</span></div>'
+                value : '<div class="{outerClassName}"><div class="{className}"><span class="{titleClassName}">{title}</span></div></div>'
             },
             
             /**
@@ -323,12 +448,22 @@
             },
             
             /**
+             * @attribute tplBackgroundHighlight
+             * @description Template for background highlights, used for weekends
+             * @type String
+             */
+            tplBackgroundHighlight : {
+                value : '<div class="{className}">&nbsp;</div>'
+            },
+            
+            /**
              * @attribute dayWidth
              * @description Width of each day label
              * @type Number
              */
             dayWidth : {
-                value : 100
+                value : 100,
+                validator : Lang.isNumber
             },
             
             /**
@@ -337,7 +472,8 @@
              * @type Number
              */
             eventHeight : {
-                value : 20
+                value : 20,
+                validator : Lang.isNumber
             },
             
             /**
@@ -350,12 +486,22 @@
             },
             
             /**
+             * @attribute endDate
+             * @description The last date shown in the timeline
+             * @type Date
+             */
+            endDate : {
+                value : Date()
+            },
+            
+            /**
              * @attribute length
              * @description length of the timeline in days
              * @type Number
              */
             length : {
-                value : 8
+                value : 8,
+                validator : Lang.isNumber
             },
             
             /**
@@ -364,7 +510,18 @@
              * @type Array
              */
             slots : {
-                value : Array()
+                value : Array(),
+                validator : Lang.isArray
+            },
+            
+            /**
+             * @attribute gutter
+             * @description Size of the gutter in pixels that lies between each slot
+             * @type Number
+             */
+            gutter : {
+                value : 3,
+                validator : Lang.isNumber
             },
             
             /**
@@ -387,14 +544,7 @@
                             v.finish = DataType.Date.parse(v.finish);
                             //Y.log(v.finish, "info", "Y.DP.Timeline");
                         }
-                    }, this);
-                    
-                    // Only calculate overlapping events on render
-                    /*
-                    Y.Array.each(value, function(v) {
-                        this._calculateOverlaps(v, value);
-                    }, this);*/                    
-                    
+                    }, this);               
                 }
             }
         },
