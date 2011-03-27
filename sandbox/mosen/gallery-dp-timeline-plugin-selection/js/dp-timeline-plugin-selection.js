@@ -30,18 +30,11 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
         Y.log("init", "info", "Y.DP.TimelineSelection");
 
         this.afterHostMethod('bindUI', this.bindUI);
+        this.after('selectedChange', this._uiSetSelected);
+
+        this.publish('selectionChange', {defaultFn: this._defSelectionChangeFn});
         // this.afterHostEvent('render', this.onHostRenderEvent);
         // this.afterHostMethod('render', this.onHostRender);
-    },
-
-    /**
-     * Create the DOM structure for the gallery-dp-timeline-plugin-selection.
-     *
-     * @method renderUI
-     * @protected
-     */
-    renderUI : function () {
-
     },
 
 
@@ -52,20 +45,18 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
      */
     bindUI : function () {
         Y.log("bindUI", "info", "Y.DP.TimelineSelection");
-        
-        this.after('selectedChange', function() { Y.log('selected changed!!!')});
 
         this.get('host').get('contentBox').delegate("click", 
             Y.bind(this.onEventMouseClick, this), 
-            '.yui3-gallery-dp-timeline-event-content', 'div');
+            'div.yui3-gallery-dp-timeline-event-content');
             
         this.get('host').get('contentBox').delegate("mouseenter", 
             Y.bind(this.onEventMouseEnter, this), 
-            '.yui3-gallery-dp-timeline-event-content', 'div');
+            'div.yui3-gallery-dp-timeline-event-content');
             
         this.get('host').get('contentBox').delegate("mouseleave", 
             Y.bind(this.onEventMouseLeave, this), 
-            '.yui3-gallery-dp-timeline-event-content', 'div');
+            'div.yui3-gallery-dp-timeline-event-content');
     },
     
     /**
@@ -92,8 +83,9 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
      * @private
      */
     onEventMouseEnter : function(e) {
-        Y.log("onEventMouseEnter", "info", "Y.DP.TimelineSelection");
+        //Y.log("onEventMouseEnter", "info", "Y.DP.TimelineSelection");
         e.target.addClass(this.get('host').getClassName('event', 'over'));
+        
     },
     
     /**
@@ -102,7 +94,7 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
      * @private
      */
     onEventMouseLeave : function(e) {
-        Y.log("onEventMouseLeave", "info", "Y.DP.TimelineSelection");
+        //Y.log("onEventMouseLeave", "info", "Y.DP.TimelineSelection");
         e.target.removeClass(this.get('host').getClassName('event', 'over'));
     },
     
@@ -114,24 +106,30 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
     onEventMouseClick : function(e) {
         Y.log("onEventMouseClick", "info", "Y.DP.TimelineSelection");
         
-        var currentSelection = this.get('selected') || e.target;
+        var currentSelection = this.get('selected');
         
-        if (e.target == currentSelection) {
+        if (e.target === currentSelection) {
             // No need to reselect same thing
+            Y.log('Already Selected');
         } else {
             Y.log('Add selection');
-            currentSelection.removeClass(this.get('host').getClassName('event', 'selected'));
+            
+            if (currentSelection) {
+                currentSelection.removeClass(this.get('host').getClassName('event', 'selected'));
+            }
             this.set('selected', e.target);
         }
     },
     
     /**
      * @description Handle selection change
-     * @method afterSelectedChange
+     * @method _uiSetSelected
      * @private
      */
-    afterSelectedChange : function() {
-        Y.log("afterSelectedChange", "info", "Y.DP.TimelineSelection");
+    _uiSetSelected : function() {
+        Y.log("_uiSetSelected", "info", "Y.DP.TimelineSelection");
+        
+        this.get('selected').addClass(this.get('host').getClassName('event', 'selected'));
     }
     
     
