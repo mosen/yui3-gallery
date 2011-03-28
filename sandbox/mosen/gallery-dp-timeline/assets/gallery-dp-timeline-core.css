@@ -1,6 +1,6 @@
 .yui3-gallery-dp-timeline {
-    background-color: #eeeeee;
-    margin: 3em;
+    z-index: 99;
+    overflow: hidden;
 }
 
 .yui3-gallery-dp-timeline-event-container {

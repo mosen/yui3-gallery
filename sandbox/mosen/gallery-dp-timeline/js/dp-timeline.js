@@ -5,14 +5,13 @@
         Node = Y.Node,
         DataType = Y.DataType;
 
-
     /**
-     * @description gallery-dp-timeline presents a static timeline
+     * @description Static timeline in a gantt-like format
      * @module gallery-dp-timeline
      * @class Y.DP.Timeline
      * @extends Widget
      */
-    Y.namespace('DP').Timeline = Y.Base.create( 'gallery-dp-timeline', Y.Widget, [], {
+    Y.namespace('DP').Timeline = Y.Base.create( 'gallery-dp-timeline', Y.Widget, [Y.WidgetParent], {
         
         /**
          * @method initializer
@@ -22,7 +21,6 @@
          */
         initializer: function() {
             Y.log("init", "info", "Y.DP.Timeline");
-        
         },
 
         /**
@@ -31,9 +29,7 @@
          * @method destructor
          * @protected
          */
-        destructor : function() {
-
-        },
+        destructor : function() { },
 
         /**
          * Create the DOM structure.
@@ -53,9 +49,8 @@
             
             // Events
             this._renderEventContainer();
+            this._childrenContainer = this._nodeEventContainer; // Render WidgetChild into this container
             
-            // Does not happen until datasource provides us with information
-            //this._renderEvents();
             
             this.get('contentBox').append(this._nodeDayContainer);
             this.get('contentBox').append(this._nodeEventContainer);
@@ -69,7 +64,14 @@
          */
         bindUI : function() {
             this.after('dateChange', this._afterDateChange);
-            this.after('eventsChange', this._uiSetEvents);
+            
+            this._ddNodeBackgroundContainer = new Y.DD.Drag({
+                node: this.get('contentBox')
+            }).plug(Y.Plugin.DDConstrained, {
+                constrain: 'view',
+                stickX: true
+            });
+                          
         },
 
         /**
@@ -81,7 +83,6 @@
             Y.log("This timeline will finish on " + this.getEndDate(), "info", "Y.DP.Timeline");
             
             this.get('boundingBox').set('style.width', this.get('length') * this.get('dayWidth') + 'px');
-            this._renderEvents();
         },
         
         // Rendering helper methods
@@ -150,76 +151,6 @@
         },
         
         /**
-         * @method _renderEvents
-         * @description Render all events in the events array
-         * @private
-         */
-        _renderEvents : function() {
-            Y.log("_renderEvents", "info", "Y.DP.Timeline");
-
-            var startingDate = this.get('date'),
-                endingDate = this.getEndDate();
-                
-            this.clearDateTime(startingDate);
-            this.clearDateTime(endingDate);
-            
-            Y.Array.each(this.get('events'), function (e) {
-                
-                if (e.start < startingDate) {
-                    e.start = startingDate;
-                    e.clippedLeft = true;
-                } 
-                
-                if (e.finish > endingDate) {   
-                    e.finish = endingDate;
-                    e.clippedRight = true;
-                }
-                    
-                this._renderEvent(e);
-                
-            }, this);
-        },
-
-        /**
-         * @method _renderEvent
-         * @description Render a single event on the timeline.
-         * @param e {Object} Object literal of the event to render
-         * @private
-         */
-        _renderEvent : function(e) {
-            Y.log("_renderEvent", "info", "Y.DP.Timeline");
-            
-            var nodeEvt = Node.create(Y.substitute(this.get('tplEvent'), {
-                outerClassName : this.getClassName('event'),
-                className : this.getClassName('event', 'content'),
-                leftCapClassName : this.getClassName('event', 'left'),
-                titleClassName : this.getClassName('event', 'title'),
-                title : e.summary
-                })),
-                duration = this.rangeToDuration(e.start, e.finish),
-                leftOffset = this.dateToOffset(e.start),
-                eventWidth = this.get('dayWidth') * duration,
-                rightOffset = leftOffset + eventWidth,
-                freeSlot = this._getFreeSlot(e, leftOffset),
-                topOffset = freeSlot * (this.get('eventHeight')) + freeSlot * this.get('gutter'),
-                slots = this.get('slots');
-            
-            e.slot = freeSlot;
-            slots[freeSlot] = rightOffset;
-           
-            
-            Y.log("_renderEvent:" + e.summary + " slot: " + e.slot , "info", "Y.DP.Timeline");
-            
-            nodeEvt.set('style.left', leftOffset + 'px');
-            nodeEvt.set('style.top', topOffset + 'px');
-            nodeEvt.set('style.width', eventWidth + 'px');
-            
-            nodeEvt.one('.' + this.getClassName('event', 'content')).set('style.height', this.get('eventHeight'));
-            
-            this._nodeEventContainer.append(nodeEvt);
-        },
-        
-        /**
          * @method _renderBackgroundContainer
          * @description Render the background objects
          * @private
@@ -260,19 +191,19 @@
             
             }, this);
         },
-  
+        
         /**
-         * @method _getFreeSlot
-         * @description Get the first available slot if this event overlaps
+         * @method _getChildFreeSlot
+         * @description Get the first available slot if this event overlaps, WidgetChild version
          * @private
          */
-        _getFreeSlot : function(e, leftedge) {
-            Y.log("_getFreeSlot: " + e.summary, "info", "Y.DP.Timeline");
+        _getChildFreeSlot : function(e, leftedge) {
+            Y.log("_getFreeSlot: " + e.get('summary'), "info", "Y.DP.Timeline");
             
             var slots = this.get('slots');
             
-            if (Lang.isNumber(e.slot)) {
-                return e.slot;
+            if (Lang.isNumber(e.get('slot'))) {
+                return e.get('slot');
             }
             
             for (var i = 0; i < slots.length; i++) {
@@ -286,6 +217,18 @@
             
             return i;
         },
+        
+        /**
+         * @description Get the calculated width of an event object
+         * @method getEventWidth
+         * @param e {Y.DP.TimelineEvent} Event child object
+         * @private
+         */
+        getEventWidth : function(e) {
+            Y.log("getEventWidth", "info", "Y.DP.Timeline");
+            
+            return this.get('dayWidth') * e.get('duration');
+        },
   
         // ATTR change hooks
         
@@ -297,12 +240,6 @@
         afterDateChange : function() {
             Y.log("afterDateChange", "info", "Y.DP.Timeline");
           
-        },
-        
-        _uiSetEvents : function() {
-            Y.log("_uiSetEvents", "info", "Y.DP.Timeline");
-            
-            this._renderEvents();
         },
         
         // Date math functions
@@ -334,13 +271,26 @@
          * @private
          */
         dateToOffset : function(d) {
-            //Y.log("dateToOffset", "info", "Y.DP.Timeline");
+            // Y.log("dateToOffset", "info", "Y.DP.Timeline");
             
-            var dayInMilliseconds = 1000*60*60*24,
-                timeDiff = d.getTime() - this.get('date').getTime(),
-                timeDiffDays = Math.floor(timeDiff/dayInMilliseconds);
+            var duration = Y.DP.TimelineUtil.rangeToDifference(this.get('date'), d),
+                offset = duration * this.get('dayWidth');
             
-            return timeDiffDays * this.get('dayWidth');
+            Y.log("dateToOffset:" + offset + "px", "info", "Y.DP.Timeline");
+            
+            return offset;
+        },
+        
+        /**
+         * @description Convert the supplied slot number into a y offset
+         * @method slotToOffset
+         * @param slot {Number} Slot number
+         * @private
+         */
+        slotToOffset : function(slot) {
+            Y.log("slotToOffset", "info", "Y.DP.Timeline");
+            
+            return slot * (this.get('eventHeight')) + slot * this.get('gutter')
         },
 
         /**
@@ -362,44 +312,6 @@
         },
         
         /**
-         * @method rangeToDuration
-         * @description Convert a range (2 dates) into a duration. Negative durations are possible
-         * @param start {Date} Starting date
-         * @param finish {Date} Finishing date
-         * @return Number Duration in days, may be negative
-         * @private
-         */
-        rangeToDuration : function(start, finish) {
-            //Y.log("rangeToDuration", "info", "Y.DP.Timeline");
-
-            // Adding a day to the duration because when we say start now finish now, we mean one day of duration
-            // Because that is the minimum duration on the timeline
-            var dayInMilliseconds = 1000*60*60*24,
-                timeDiff = finish.getTime() - start.getTime(),
-                timeDiffDays = Math.ceil(timeDiff/dayInMilliseconds) + 1;
-                
-            return timeDiffDays;
-        },
-        
-        /**
-         * @method clearDateTime
-         * @description Clear the time from a date
-         * @param d {Date} Date to set time back to 00:00
-         * @return Date date with time cleared
-         * @public
-         */
-        clearDateTime : function(d) {
-            Y.log("clearDateTime", "info", "Y.DP.Timeline");
-            
-            d.setHours(0);
-            d.setMinutes(0);
-            d.setSeconds(0);
-            d.setMilliseconds(0);
-            
-            return d;
-        },
-        
-        /**
          * @property _dates
          * @description Array containing information about dates shown
          * @private
@@ -411,6 +323,18 @@
         NAME : "timeline",
 
         ATTRS : {
+            
+            /**
+             * Default child class to use
+             * 
+             * @attribute defaultChildType
+             * @type String
+             * @readonly
+             * @private
+             */
+            defaultChildType: {
+                value: Y.DP.TimelineEvent
+            },
             
             /**
              * @attribute tplDayContainer
@@ -437,15 +361,6 @@
              */
             tplEventContainer : {
                 value : '<div class="{className}"></div>'
-            },
-            
-            /**
-             * @attribute tplEvent
-             * @description Template to use for rendering events
-             * @type String
-             */
-            tplEvent : {
-                value : '<div class="{outerClassName}"><div class="{className}"><span class="{titleClassName}">{title}</span></div></div>'
             },
             
             /**
@@ -492,7 +407,10 @@
              * @type Date
              */
             date : {
-                value : Date()
+                value : Date(),
+                setter : function(value) {
+                    return Y.DP.TimelineUtil.zeroTime(value);
+                }
             },
             
             /**
@@ -533,30 +451,6 @@
             gutter : {
                 value : 3,
                 validator : Lang.isNumber
-            },
-            
-            /**
-             * @description Array of events to be rendered
-             * @attribute events
-             * @type Array
-             */
-            events : {
-                value : Array(),
-                setter : function(value) {
-                    
-                    // Normalise dates supplied
-                    Y.Array.each(value, function(v) {
-                        if (Lang.isString(v.start)) {
-                            v.start = DataType.Date.parse(v.start);
-                            //Y.log(v.start , "info", "Y.DP.Timeline");
-                        }
-                        
-                        if (Lang.isString(v.finish)) {
-                            v.finish = DataType.Date.parse(v.finish);
-                            //Y.log(v.finish, "info", "Y.DP.Timeline");
-                        }
-                    }, this);               
-                }
             }
         },
 
