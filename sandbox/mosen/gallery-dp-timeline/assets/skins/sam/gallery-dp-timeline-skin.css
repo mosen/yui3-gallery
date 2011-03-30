@@ -15,7 +15,7 @@
     border-color: #2ea4c5 #0074a5 #0074a5 #2ea4c5;
     border-radius: 2px 0px 2px 0px;
 
-    background-color: #0e84b5;
+   /* background-color: #0e84b5; */
     background-image: url('./images/dp-timeline-bg.png');
     background-repeat: repeat-x;
     
@@ -35,6 +35,16 @@
     
 }
 
+.yui3-skin-sam .yui3-gallery-dp-timeline .yui3-gallery-dp-timeline-event-over {
+    background-color: #EEAA88;
+    cursor: pointer;
+}
+
+.yui3-skin-sam .yui3-gallery-dp-timeline .yui3-gallery-dp-timeline-event-selected .yui3-gallery-dp-timeline-event-content {
+    background-color: #AAAAAA;
+    cursor: pointer;
+}
+
 /*
 .yui3-gallery-dp-timeline-event-left {
     float: left;
@@ -42,3 +52,35 @@
     background-image: url('./images/dp-timeline-bar.png');
     background-repeat: no-repeat;
 }*/
+
+.yui3-gallery-dp-timeline-event-booked { 
+    background-color: #E7E568;
+}
+
+.yui3-gallery-dp-timeline-event-leave {
+    background-color: #A865A6;
+}
+
+.yui3-gallery-dp-timeline-event-pending {
+    background-color: #E30613;
+}
+
+.yui3-gallery-dp-timeline-event-flexible {
+    background-color: #F5B1D0;
+}
+
+.yui3-gallery-dp-timeline-event-telecommuting {
+    background-color: #FFED00;
+}
+
+.yui3-gallery-dp-timeline-event-presscheck {
+    background-color: #CBBE65;
+}
+
+.yui3-gallery-dp-timeline-event-sku {
+    background-color: #009FE3;
+}
+
+.yui3-gallery-dp-timeline-event-house {
+    background-color: #009640;
+}

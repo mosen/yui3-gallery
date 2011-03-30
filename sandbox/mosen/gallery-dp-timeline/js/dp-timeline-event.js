@@ -1,5 +1,5 @@
 /**
- *
+ * TimelineEvent class
  *
  * @module gallery-dp-timeline-event
  * @requires Lang, Base, Widget
@@ -7,19 +7,22 @@
 
 /* Any frequently used shortcuts, strings and constants */
 var Lang = Y.Lang,
+    Node = Y.Node,
+    DataType = Y.DataType,
     contentClassName = Y.ClassNameManager.getClassName('gallery-dp-timeline-event', 'content'),
     boundingClassName = Y.ClassNameManager.getClassName('gallery-dp-timeline-event', 'bounding');
 
 /**
+ * Timeline event represents a single event on a Y.DP.Timeline
  *
- *
- * @class Dp-timeline-event
+ * @class Y.DP.TimelineEvent
  * @extends Widget
  */
 Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.Widget, [Y.WidgetChild], {
 
     /**
      * Content Template
+     * 
      * @attribute CONTENT_TEMPLATE
      * @protected
      */
@@ -27,13 +30,14 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
     
     /**
      * Bounding Template
+     * 
      * @attribute BOUNDING_TEMPLATE
      * @protected
      */
     BOUNDING_TEMPLATE : "<div></div>",
 
     /**
-     *
+     * Y.Widget Lifecycle
      *
      * @method initializer
      * @param config {Object} Configuration object
@@ -88,6 +92,7 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
 
 
     /**
+     * Y.Widget Lifecycle
      *
      * @method bindUI
      * @protected
@@ -95,15 +100,17 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
     bindUI : function () {
         this.after('startChange', this._afterDateChange);
         this.after('finishChange', this._afterDateChange);
+        this.after('slotChange', this._afterSlotChange);
     },
     
     /**
      * Synchronizes the DOM state with the attribute settings
      *
      * @method syncUI
+     * @protected
      */
     syncUI : function () {
-        
+        this.get('contentBox').addClass(this.getClassName(this.get('category')));
     },
 
     /**
@@ -114,11 +121,8 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
      */
     destructor: function() { },
     
-    
-    
-    
     /**
-     * @description Recalculate duration and width after date changes
+     * Recalculate duration and width after date changes
      * @method _afterDateChange
      * @private
      */
@@ -127,8 +131,20 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
         
         // Update calculated duration
         this.set('duration', Y.DP.TimelineUtil.rangeToDuration(this.get('start'), this.get('finish')));
+    },
+    
+    /**
+     * Reset the Y position when the slot attribute changes
+     * 
+     * @method _afterSlotChange
+     * @private
+     */
+    _afterSlotChange : function(e) {
+        Y.log("_afterSlotChange", "info", "Y.DP.TimelineEvent");
+        
+        var topOffset = this.get('parent').slotToOffset(this.get('slot'));
+        this.get('boundingBox').set('style.top', topOffset + 'px');
     }
-    // Use NetBeans Code template "ymethod" to add methods here
 
 }, {
 
@@ -141,7 +157,7 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
      * @type String
      * @static
      */
-    NAME : "event",
+    NAME : "timelineEvent",
 
     /**
      * Static Object hash used to capture existing markup for progressive
@@ -166,19 +182,11 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
      * @static
      */
     ATTRS : { 
-        
-        /**
-         * Strings that need to be localized can be placed here
-         *
-         * @property ATTRS
-         * @type Object
-         * @protected
-         * @static
-         */
 
         
         /**
-         * @description Starting date of the event (inclusive)
+         * Starting date of the event (inclusive)
+         * 
          * @attribute start
          * @type Date
          */
@@ -190,7 +198,8 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
         },
         
         /**
-         * @description Ending date of the event (non inclusive)
+         * Ending date of the event (non inclusive)
+         * 
          * @attribute finish
          * @type Date
          */
@@ -202,7 +211,8 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
         },
 
         /**
-         * @description Duration (in days) of the event
+         * Duration (in days) of the event
+         * 
          * @attribute duration
          * @type Number
          */
@@ -212,7 +222,8 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
         },
         
         /**
-         * @description Title of the event
+         * Title of the event
+         * 
          * @attribute summary
          * @type String
          */
@@ -222,7 +233,19 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
         },
         
         /**
-         * @description Vertical slot to fit this event into, parent will calculate this
+         * Category of the event, used for colouring
+         * 
+         * @attribute category
+         * @type String
+         */
+        category : {
+            value : '',
+            validator : Lang.isString
+        },
+        
+        /**
+         * Vertical slot to fit this event into, parent will calculate this
+         * 
          * @attribute slot
          * @type Number
          */

@@ -6,7 +6,8 @@
         DataType = Y.DataType;
 
     /**
-     * @description Static timeline in a gantt-like format
+     * Static timeline in a gantt-like format
+     *
      * @module gallery-dp-timeline
      * @class Y.DP.Timeline
      * @extends Widget
@@ -63,14 +64,57 @@
          * @protected
          */
         bindUI : function() {
-            this.after('dateChange', this._afterDateChange);
             
+            // DOM EVENTS
+            
+            this.get('contentBox').delegate("mouseenter", 
+                Y.bind(this.onEventMouseEnter, this), 
+                'div.yui3-gallery-dp-timeline-event-content');
+            
+            
+            this.get('contentBox').delegate("mouseleave", 
+                Y.bind(this.onEventMouseLeave, this), 
+                'div.yui3-gallery-dp-timeline-event-content');
+            
+
+            
+            Y.on("key", Y.bind(this.onEventKeyDelete, this), document, "down:46, 8");
+
+            // Set selection on mousedown
+            this.on("gallery-dp-timeline-event:mousedown", function(event) {
+               
+               var item = event.target,
+               domEvent = event.domEvent;
+               
+               if (this.get("multiple")) {
+                   if (domEvent.metaKey) {
+                       item.set("selected", 1);
+                   } else {
+                       this.deselectAll();
+                       item.set("selected", 1);
+                   }
+               } else {
+                   item.set("selected", 1);
+               }
+            });
+            
+            this._nodeBackgroundContainer.on("dblclick",
+                Y.bind(this.onEventMouseDblClick, this));
+            
+            // ATTR EVENTS
+            this.after('dateChange', this._afterDateChange);
+            this.after('selectionChange', this._afterSelectionChange);
+            this.after('addChild', this._afterChildrenChange);
+            this.after('removeChild', this._afterChildrenChange);
+            
+            
+            /*
             this._ddNodeBackgroundContainer = new Y.DD.Drag({
                 node: this.get('contentBox')
             }).plug(Y.Plugin.DDConstrained, {
                 constrain: 'view',
                 stickX: true
-            });
+            });*/
                           
         },
 
@@ -88,7 +132,8 @@
         // Rendering helper methods
         
         /**
-         * @description Render the containers for the headings
+         * Render the containers for the headings
+         *
          * @method _renderHeadings
          * @private
          */
@@ -103,7 +148,8 @@
         },
         
         /**
-         * @description Render all of the day labels
+         * Render all of the day labels
+         *
          * @method _renderHeadingsDays
          * @private
          */
@@ -118,8 +164,7 @@
                 
                 labelDate = new Date(currentDate.getTime());
                 labelDate.setDate(labelDate.getDate() + i);
-                
-                
+                 
                 var lblDay = Node.create(Y.substitute(this.get('tplDay'), {
                     className : this.getClassName('day'),
                     labelClassName : this.getClassName('day', 'label'),
@@ -137,7 +182,8 @@
         },
         
         /**
-         * @description Render the container that will hold events
+         * Render the container that will hold events
+         *
          * @method _renderEventContainer
          * @private
          */
@@ -151,8 +197,9 @@
         },
         
         /**
+         * Render the background objects
+         *
          * @method _renderBackgroundContainer
-         * @description Render the background objects
          * @private
          */
         _renderBackgroundContainer : function() {
@@ -168,8 +215,9 @@
         },
         
         /**
+         * Render highlight objects on the background which indicate holidays.
+         *
          * @method _renderBackgroundHighlights
-         * @description Render highlight objects on the background which indicate holidays.
          * @private
          */
         _renderBackgroundHighlights : function() {
@@ -193,8 +241,9 @@
         },
         
         /**
+         * Get the first available slot if this event overlaps, WidgetChild version
+         *
          * @method _getChildFreeSlot
-         * @description Get the first available slot if this event overlaps, WidgetChild version
          * @private
          */
         _getChildFreeSlot : function(e, leftedge) {
@@ -219,7 +268,20 @@
         },
         
         /**
-         * @description Get the calculated width of an event object
+         * Remove the currently selected item (if any)
+         *
+         * @method removeSelected
+         * @private
+         */
+        removeSelected : function() {
+            Y.log("removeSelected", "info", "Y.DP.Timeline");
+            
+            this.get('selection').remove();
+        },
+          
+        /**
+         * Get the calculated width of an event object
+         *
          * @method getEventWidth
          * @param e {Y.DP.TimelineEvent} Event child object
          * @private
@@ -232,9 +294,53 @@
   
         // ATTR change hooks
         
+        
         /**
+         * Handle a change in child objects, from WidgetParent
+         * 
+         * @method _afterChildrenChange
+         * @private
+         */
+        _afterChildrenChange : function() {
+            Y.log("_afterChildrenChange", "info", "Y.DP.Timeline");
+            
+            this.reflowEvents();
+        },
+        
+        /**
+         * Re-flow events so that they are stacked where possible
+         * 
+         * @method reflowEvents
+         * @public
+         */
+        reflowEvents : function() {
+            Y.log("reflowEvents", "info", "Y.DP.Timeline");
+            
+            var childLeftOffset,
+                childSlot,
+                slots;
+            
+            this.set('slots', new Array());
+            
+            this.each(function(c) {
+                
+                c.set('slot', undefined);
+                childLeftOffset = this.dateToOffset(c.get('start'));
+                childSlot = this._getChildFreeSlot(c, childLeftOffset);
+                Y.log("Reflowing Child: " + c.get('summary') + " to slot: " + childSlot, "info", "Y.DP.Timeline");
+                
+                c.set('slot', childSlot);
+                slots = this.get('slots');
+                slots[childSlot] = childLeftOffset + this.getEventWidth(c);
+                
+                this.set('slots', slots);
+            }, this);
+        },
+        
+        /**
+         * Handle date change, update UI
+         *
          * @method afterDateChange
-         * @description Handle date change, update UI
          * @private
          */
         afterDateChange : function() {
@@ -242,31 +348,82 @@
           
         },
         
+        /**
+         * Handle selection change, update UI
+         *
+         * @method afterSelectionChange
+         * @private
+         */
+        afterSelectionChange : function() {
+            Y.log("afterSelectionChange", "info", "Y.DP.Timeline");
+        },
+        
+        /**
+         * Handle mouse entering an event
+         *
+         * @method onEventMouseEnter
+         * @private
+         */
+        onEventMouseEnter : function(e) {
+            //Y.log("onEventMouseEnter", "info", "Y.DP.Timeline");
+            e.currentTarget.addClass(this.getClassName('event', 'over'));
+        },
+        
+        /**
+         * Handle mouse leaving an event
+         *
+         * @method onEventMouseLeave
+         * @private
+         */
+        onEventMouseLeave : function(e) {
+            //Y.log("onEventMouseLeave", "info", "Y.DP.Timeline");
+            e.currentTarget.removeClass(this.getClassName('event', 'over'));
+        },
+        
+        /**
+         * Delete selected event when a delete/backspace key is pressed
+         *
+         * @method onEventKeyDelete
+         * @param e {Event} Event facade
+         * @private
+         */
+        onEventKeyDelete : function(e) {
+            Y.log("onEventKeyDelete", "info", "Y.DP.Timeline");
+            
+            this.get('selection').remove();
+        },
+        
+        /**
+         * @description Handle mouse doubleclick on background
+         * @method onEventMouseDblClick
+         * @private
+         */
+        onEventMouseDblClick : function() {
+            Y.log("onEventMouseDblClick", "info", "Y.DP.Timeline");
+            
+            this.add(this.get('childPrototype'));
+        },
+        
         // Date math functions
         
         /**
+         * Get the last date that should be shown on the timeline
+         *
          * @method getEndDate
-         * @description Get the last date that should be shown on the timeline
          * @return Date Ending date for the timeline
          * @public
          */
         getEndDate : function() {
             Y.log("getEndDate", "info", "Y.DP.Timeline");
             
-            var d = this.get('date'),
-                endDate = new Date();
-                
-            endDate.setTime(d.getTime());
-            
             // One day is deducted because the word length implies that the starting day is included in that range
-            endDate.setDate(endDate.getDate() + (this.get('length') - 1)); 
-            
-            return endDate;
+            return Y.DP.TimelineUtil.addDays(this.get('date'), (this.get('length') - 1));
         },
         
         /**
+         * Convert the supplied date into an x offset
+         *
          * @method dateToOffset
-         * @description Convert the supplied date into an x offset
          * @param d {Date} Date which will be compared to our date attribute
          * @private
          */
@@ -282,7 +439,8 @@
         },
         
         /**
-         * @description Convert the supplied slot number into a y offset
+         * Convert the supplied slot number into a y offset
+         *
          * @method slotToOffset
          * @param slot {Number} Slot number
          * @private
@@ -290,12 +448,13 @@
         slotToOffset : function(slot) {
             Y.log("slotToOffset", "info", "Y.DP.Timeline");
             
-            return slot * (this.get('eventHeight')) + slot * this.get('gutter')
+            return slot * (this.get('eventHeight')) + slot * this.get('gutter');
         },
 
         /**
+         * Determine if the given date is a public holiday or not
+         *
          * @method isDatePublicHoliday
-         * @description Determine if the given date is a public holiday or not
          * @param d {Date} Date to examine
          * @todo Support alternate datasource for public holidays in addition to fixed holidays
          * @return boolean True if date is a public holiday
@@ -312,8 +471,9 @@
         },
         
         /**
+         * Array containing information about dates shown
+         *
          * @property _dates
-         * @description Array containing information about dates shown
          * @private
          */
         _dates : Array()
@@ -337,8 +497,9 @@
             },
             
             /**
+             * Container for days of the week labels
+             *
              * @attribute tplDayContainer
-             * @description Container for days of the week labels
              * @type String
              */
             tplDayContainer : {
@@ -346,8 +507,9 @@
             },
             
             /**
+             * Box containing label for day of the week
+             *
              * @attribute tplDay
-             * @description Box containing label for day of the week
              * @type String
              */
             tplDay : {
@@ -355,8 +517,9 @@
             },
             
             /**
+             * Container for events that may span days
+             *
              * @attribute tplEventContainer
-             * @description Container for events that may span days
              * @type String
              */
             tplEventContainer : {
@@ -364,8 +527,9 @@
             },
             
             /**
+             * Template for the background container which defines background style and holds highlighted days
+             *
              * @attribute tplBackgroundContainer
-             * @description Template for the background container which defines background style and holds highlighted days
              * @type String
              */
             tplBackgroundContainer : {
@@ -373,8 +537,9 @@
             },
             
             /**
+             * Template for background highlights, used for weekends
+             *
              * @attribute tplBackgroundHighlight
-             * @description Template for background highlights, used for weekends
              * @type String
              */
             tplBackgroundHighlight : {
@@ -382,7 +547,8 @@
             },
             
             /**
-             * @description Width of each day label
+             * Width of each day label
+             *
              * @attribute dayWidth
              * @type Number
              */
@@ -392,7 +558,8 @@
             },
             
             /**
-             * @description Height of each event
+             * Height of each event
+             *
              * @attribute eventHeight
              * @type Number
              */
@@ -402,7 +569,8 @@
             },
             
             /**
-             * @description Starting date of the timeline
+             * Starting date of the timeline
+             *
              * @attribute date
              * @type Date
              */
@@ -414,7 +582,8 @@
             },
             
             /**
-             * @description The last date shown in the timeline
+             * The last date shown in the timeline
+             *
              * @attribute endDate
              * @type Date
              */
@@ -423,7 +592,8 @@
             },
             
             /**
-             * @description length of the timeline in days
+             * length of the timeline in days
+             *
              * @attribute length
              * @type Number
              */
@@ -433,7 +603,8 @@
             },
             
             /**
-             * @description Hold the leftmost pixel of the rightmost event per slot to determine free slots
+             * Hold the leftmost pixel of the rightmost event per slot to determine free slots
+             *
              * @attribute slots
              * @type Array
              */
@@ -443,14 +614,30 @@
             },
             
             /**
-             * @description Size of the gutter in pixels that lies between each slot
-             * @attribute gutter
+             * Size of the gutter in pixels that lies between each slot
              *
+             * @attribute gutter
              * @type Number
              */
             gutter : {
                 value : 3,
                 validator : Lang.isNumber
+            },
+            
+            /**
+             * Prototype object for child objects
+             * 
+             * @attribute childPrototype
+             * @type Object
+             */
+            childPrototype : {
+                readonly: true,
+                getter: function() {
+                    return {start: this.get('date'), 
+                            finish: this.get('date'), 
+                            summary: 'Title', 
+                            category: 'booked'};
+                }
             }
         },
 

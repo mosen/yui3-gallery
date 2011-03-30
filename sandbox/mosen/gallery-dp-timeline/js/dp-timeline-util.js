@@ -61,6 +61,24 @@ var TimelineUtil = {
             d.setMilliseconds(0);
             
             return d;
+        },
+        
+        /**
+         * @description Get a new date object with days added
+         * @method addDays
+         * @param d {Date} Date used as basis
+         * @param days {Number} Number of days to add
+         * @return Date Date with days added
+         * @private
+         */
+        addDays : function(d, days) {
+            Y.log("addDays", "info", "Y.DP.TimelineUtil");
+            
+            var returnDate = new Date();
+            returnDate.setTime(d.getTime());
+            returnDate.setDate(returnDate.getDate() + days);
+
+            return returnDate;
         }
 };
 
