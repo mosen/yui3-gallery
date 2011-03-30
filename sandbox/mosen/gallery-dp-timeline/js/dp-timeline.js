@@ -1,24 +1,33 @@
 //YUI.add('dp-timeline', function(Y) {
-	
+
+/**
+ * The timeline module produces a graphical representation of a timeline with events marked on the timeline
+ * Similar to a gantt-chart but more generic.
+ * 
+ * @module gallery-dp-timeline
+ */
+
     // shortcuts and constants
     var Lang = Y.Lang,
         Node = Y.Node,
         DataType = Y.DataType;
 
     /**
-     * Static timeline in a gantt-like format
-     *
-     * @module gallery-dp-timeline
-     * @class Y.DP.Timeline
+     * The timeline module produces a graphical representation of a timeline with events marked on the timeline,
+     * Similar to a gantt-chart but more generic.
+     * 
+     * @class DP.Timeline
      * @extends Widget
      */
     Y.namespace('DP').Timeline = Y.Base.create( 'gallery-dp-timeline', Y.Widget, [Y.WidgetParent], {
         
         /**
+         * Y.Widget Lifecycle: Initializer
+         * 
          * @method initializer
          * @param config {Object} Configuration object
-         * @protected
          * @constructor
+         * @protected
          */
         initializer: function() {
             Y.log("init", "info", "Y.DP.Timeline");
@@ -41,19 +50,23 @@
         renderUI : function() {
             
             // Timeline headings, Date labels
-            this._renderHeadings();
-            this._renderHeadingsDays();
+            this._nodeDayContainer = this._renderHeadings();
+            this._renderHeadingsDays(this._nodeDayContainer);
             
             // Background, Background highlights / markers
-            this._renderBackgroundContainer();
-            this._renderBackgroundHighlights();
+            this._nodeBackgroundContainer = this._renderBackgroundContainer();
+            this._renderBackgroundHighlights(this._nodeBackgroundContainer);
             
             // Events
-            this._renderEventContainer();
-            this._childrenContainer = this._nodeEventContainer; // Render WidgetChild into this container
+            this._nodeEventContainer = this._renderEventContainer();
             
+            // Instruct Y.WidgetChild to render child nodes to this container
+            this._childrenContainer = this._nodeEventContainer; 
             
+            // Append created nodes to this widget
+            this.get('contentBox').append(this._nodeBackgroundContainer);
             this.get('contentBox').append(this._nodeDayContainer);
+            
             this.get('contentBox').append(this._nodeEventContainer);
         },
 
@@ -67,6 +80,8 @@
             
             // DOM EVENTS
             
+            // Selection Highlighting
+            
             this.get('contentBox').delegate("mouseenter", 
                 Y.bind(this.onEventMouseEnter, this), 
                 'div.yui3-gallery-dp-timeline-event-content');
@@ -76,37 +91,19 @@
                 Y.bind(this.onEventMouseLeave, this), 
                 'div.yui3-gallery-dp-timeline-event-content');
             
-
             
             Y.on("key", Y.bind(this.onEventKeyDelete, this), document, "down:46, 8");
 
             // Set selection on mousedown
-            this.on("gallery-dp-timeline-event:mousedown", function(event) {
-               
-               var item = event.target,
-               domEvent = event.domEvent;
-               
-               if (this.get("multiple")) {
-                   if (domEvent.metaKey) {
-                       item.set("selected", 1);
-                   } else {
-                       this.deselectAll();
-                       item.set("selected", 1);
-                   }
-               } else {
-                   item.set("selected", 1);
-               }
-            });
-            
-            this._nodeBackgroundContainer.on("dblclick",
-                Y.bind(this.onEventMouseDblClick, this));
+            this.on("gallery-dp-timeline-event:mousedown", this.onEventMouseClick);
             
             // ATTR EVENTS
             this.after('dateChange', this._afterDateChange);
             this.after('selectionChange', this._afterSelectionChange);
+            
+            // Y.WidgetParent CustomEvents
             this.after('addChild', this._afterChildrenChange);
             this.after('removeChild', this._afterChildrenChange);
-            
             
             /*
             this._ddNodeBackgroundContainer = new Y.DD.Drag({
@@ -129,32 +126,34 @@
             this.get('boundingBox').set('style.width', this.get('length') * this.get('dayWidth') + 'px');
         },
         
-        // Rendering helper methods
+        // Rendering Stage
         
         /**
          * Render the containers for the headings
          *
          * @method _renderHeadings
+         * @return Y.Node Heading Container
          * @private
          */
         _renderHeadings : function() {
-            Y.log("_renderHeadings", "info", "Y.DP.Timeline");
+            //Y.log("_renderHeadings", "info", "Y.DP.Timeline");
             
             var nodeDayContainer = Node.create(Y.substitute(this.get('tplDayContainer'), {
                className : this.getClassName('day', 'container')
             }));
             
-            this._nodeDayContainer = nodeDayContainer;
+            return nodeDayContainer;
         },
         
         /**
          * Render all of the day labels
          *
          * @method _renderHeadingsDays
+         * @param parent {Node} Parent to render into
          * @private
          */
-        _renderHeadingsDays : function() {
-            Y.log("_renderHeadingsDays", "info", "Y.DP.Timeline");
+        _renderHeadingsDays : function(parent) {
+            //Y.log("_renderHeadingsDays", "info", "Y.DP.Timeline");
             
             var currentDate = this.get('date'),
                 labelDate,
@@ -175,8 +174,13 @@
                 lblDay.set('style.left', leftOffset + 'px');
                 lblDay.set('style.width', this.get('dayWidth') + 'px');
 
-                this._nodeDayContainer.append(lblDay);
-                this._dates.push({ date: labelDate, left: leftOffset });
+                parent.append(lblDay);
+                
+                this._dates.push({ 
+                    date: labelDate, 
+                    left: leftOffset, 
+                    mid: leftOffset + Math.ceil(this.get('dayWidth') / 2) 
+                });
             }
             
         },
@@ -185,48 +189,51 @@
          * Render the container that will hold events
          *
          * @method _renderEventContainer
+         * @return Node Event container, holding child events
          * @private
          */
         _renderEventContainer : function() {
-            Y.log("_renderEventContainer", "info", "Y.DP.Timeline");
+            //Y.log("_renderEventContainer", "info", "Y.DP.Timeline");
             
-            this._nodeEventContainer = Node.create(Y.substitute(this.get('tplEventContainer'), {
+            var eventContainer = Node.create(Y.substitute(this.get('tplEventContainer'), {
                 className : this.getClassName('event', 'container')
             }));
-           
+            
+            return eventContainer;
         },
         
         /**
          * Render the background objects
          *
          * @method _renderBackgroundContainer
+         * @return Node Container for background (timeline static) objects
          * @private
          */
         _renderBackgroundContainer : function() {
-            Y.log("_renderBackgroundContainer", "info", "Y.DP.Timeline");
+            //Y.log("_renderBackgroundContainer", "info", "Y.DP.Timeline");
             
             var nodeBg = Node.create(Y.substitute(this.get('tplBackgroundContainer'), {
                 className : this.getClassName('background')
             }));
             nodeBg.set('style.width', this.get('length') * this.get('dayWidth') + 'px');
             
-            this._nodeBackgroundContainer = nodeBg;
-            this.get('contentBox').append(this._nodeBackgroundContainer);
+            return nodeBg;
         },
         
         /**
          * Render highlight objects on the background which indicate holidays.
          *
          * @method _renderBackgroundHighlights
+         * @param parent {Node} Parent node to render into
          * @private
          */
-        _renderBackgroundHighlights : function() {
+        _renderBackgroundHighlights : function(parent) {
             Y.log("_renderBackgroundHighlights", "info", "Y.DP.Timeline");
             
             Y.Array.each(this._dates, function(d){
             
                 if (this.isDatePublicHoliday(d.date)) {
-                    Y.log("is public holiday :" + d.date, "info", "Y.DP.Timeline");
+                    //Y.log("is public holiday :" + d.date, "info", "Y.DP.Timeline");
 
                     var nodeBgHl = Node.create(Y.substitute(this.get('tplBackgroundHighlight'), {
                         className : this.getClassName('background', 'highlight')
@@ -234,11 +241,13 @@
                     nodeBgHl.set('style.left', this.dateToOffset(d.date) + 'px');
                     nodeBgHl.set('style.width', this.get('dayWidth') + 'px');
 
-                    this._nodeBackgroundContainer.append(nodeBgHl);
+                    parent.append(nodeBgHl);
                 }
             
             }, this);
         },
+        
+        // Child Event Calculation / Modification
         
         /**
          * Get the first available slot if this event overlaps, WidgetChild version
@@ -247,7 +256,7 @@
          * @private
          */
         _getChildFreeSlot : function(e, leftedge) {
-            Y.log("_getFreeSlot: " + e.get('summary'), "info", "Y.DP.Timeline");
+            //Y.log("_getFreeSlot: " + e.get('summary'), "info", "Y.DP.Timeline");
             
             var slots = this.get('slots');
             
@@ -265,46 +274,6 @@
             }
             
             return i;
-        },
-        
-        /**
-         * Remove the currently selected item (if any)
-         *
-         * @method removeSelected
-         * @private
-         */
-        removeSelected : function() {
-            Y.log("removeSelected", "info", "Y.DP.Timeline");
-            
-            this.get('selection').remove();
-        },
-          
-        /**
-         * Get the calculated width of an event object
-         *
-         * @method getEventWidth
-         * @param e {Y.DP.TimelineEvent} Event child object
-         * @private
-         */
-        getEventWidth : function(e) {
-            Y.log("getEventWidth", "info", "Y.DP.Timeline");
-            
-            return this.get('dayWidth') * e.get('duration');
-        },
-  
-        // ATTR change hooks
-        
-        
-        /**
-         * Handle a change in child objects, from WidgetParent
-         * 
-         * @method _afterChildrenChange
-         * @private
-         */
-        _afterChildrenChange : function() {
-            Y.log("_afterChildrenChange", "info", "Y.DP.Timeline");
-            
-            this.reflowEvents();
         },
         
         /**
@@ -338,6 +307,49 @@
         },
         
         /**
+         * Get the calculated width of an event object
+         *
+         * @method getEventWidth
+         * @param e {Y.DP.TimelineEvent} Event child object
+         * @private
+         */
+        getEventWidth : function(e) {
+            Y.log("getEventWidth", "info", "Y.DP.Timeline");
+            
+            return this.get('dayWidth') * e.get('duration');
+        },
+  
+        
+        /**
+         * Remove the currently selected item (if any)
+         *
+         * @method removeSelected
+         * @private
+         */
+        removeSelected : function() {
+            Y.log("removeSelected", "info", "Y.DP.Timeline");
+            
+            // TODO this does not correctly determine whether the selection is a node or not.
+            if (this.get('selection') !== undefined) {
+                this.get('selection').remove();
+            }
+        },  
+
+        // ATTR change hooks
+        
+        /**
+         * Handle a change in child objects, from WidgetParent
+         * 
+         * @method _afterChildrenChange
+         * @private
+         */
+        _afterChildrenChange : function() {
+            Y.log("_afterChildrenChange", "info", "Y.DP.Timeline");
+            
+            this.reflowEvents();
+        },
+        
+        /**
          * Handle date change, update UI
          *
          * @method afterDateChange
@@ -356,6 +368,33 @@
          */
         afterSelectionChange : function() {
             Y.log("afterSelectionChange", "info", "Y.DP.Timeline");
+        },
+        
+        // DOM EVENT HANDLERS
+        
+        /**
+         * Handle mouse click on a child event, causing it to be selected
+         * 
+         * @method onEventMouseClick
+         * @param e {Event} Event facade
+         * @private
+         */
+        onEventMouseClick : function(e) {
+            Y.log("onEventMouseClick", "info", "Y.DP.Timeline");
+               
+           var item = e.target,
+           domEvent = e.domEvent;
+
+           if (this.get("multiple")) {
+               if (domEvent.metaKey) {
+                   item.set("selected", 1);
+               } else {
+                   this.deselectAll();
+                   item.set("selected", 1);
+               }
+           } else {
+               item.set("selected", 1);
+           } 
         },
         
         /**
@@ -394,7 +433,8 @@
         },
         
         /**
-         * @description Handle mouse doubleclick on background
+         * Handle mouse doubleclick on background
+         * 
          * @method onEventMouseDblClick
          * @private
          */
@@ -484,6 +524,8 @@
 
         ATTRS : {
             
+            // Y.WidgetParent Configuration
+            
             /**
              * Default child class to use
              * 
@@ -495,6 +537,8 @@
             defaultChildType: {
                 value: Y.DP.TimelineEvent
             },
+            
+            // DOM Creation Templates
             
             /**
              * Container for days of the week labels
@@ -545,6 +589,8 @@
             tplBackgroundHighlight : {
                 value : '<div class="{className}">&nbsp;</div>'
             },
+            
+            // Timeline Properties
             
             /**
              * Width of each day label
@@ -622,22 +668,6 @@
             gutter : {
                 value : 3,
                 validator : Lang.isNumber
-            },
-            
-            /**
-             * Prototype object for child objects
-             * 
-             * @attribute childPrototype
-             * @type Object
-             */
-            childPrototype : {
-                readonly: true,
-                getter: function() {
-                    return {start: this.get('date'), 
-                            finish: this.get('date'), 
-                            summary: 'Title', 
-                            category: 'booked'};
-                }
             }
         },
 

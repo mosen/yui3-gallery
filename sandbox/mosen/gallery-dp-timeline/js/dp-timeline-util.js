@@ -1,7 +1,8 @@
 /**
  * Utility methods used to calculate dates and times for timeline
+ * 
+ * @class DP.TimelineUtil
  */
-
 var TimelineUtil = {
     
         /**

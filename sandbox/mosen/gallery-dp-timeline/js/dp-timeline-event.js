@@ -1,9 +1,4 @@
-/**
- * TimelineEvent class
- *
- * @module gallery-dp-timeline-event
- * @requires Lang, Base, Widget
- */
+
 
 /* Any frequently used shortcuts, strings and constants */
 var Lang = Y.Lang,
@@ -15,7 +10,7 @@ var Lang = Y.Lang,
 /**
  * Timeline event represents a single event on a Y.DP.Timeline
  *
- * @class Y.DP.TimelineEvent
+ * @class DP.TimelineEvent
  * @extends Widget
  */
 Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.Widget, [Y.WidgetChild], {
@@ -23,7 +18,7 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
     /**
      * Content Template
      * 
-     * @attribute CONTENT_TEMPLATE
+     * @property CONTENT_TEMPLATE
      * @protected
      */
     CONTENT_TEMPLATE : '<div class="' + contentClassName + '"></div>',
@@ -31,18 +26,18 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
     /**
      * Bounding Template
      * 
-     * @attribute BOUNDING_TEMPLATE
+     * @property BOUNDING_TEMPLATE
      * @protected
      */
     BOUNDING_TEMPLATE : "<div></div>",
 
     /**
-     * Y.Widget Lifecycle
+     * Y.Widget Lifecycle : Initializer
      *
      * @method initializer
      * @param config {Object} Configuration object
-     * @protected
      * @constructor
+     * @protected
      */
     initializer : function (config) {
         Y.log("init event", "info", "Y.DP.TimelineEvent");

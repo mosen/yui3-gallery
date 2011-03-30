@@ -66,7 +66,7 @@
             onDataReturnInitializeTimeline : function(o) {
                 Y.log("onDataReturnInitializeTimeline", "info", "Y.DP.TimelineDataSource");
                 
-                this.get('host').set('events', o.response.results);
+                this.get('host').add(o.response.results);
             }
             
         }, {
