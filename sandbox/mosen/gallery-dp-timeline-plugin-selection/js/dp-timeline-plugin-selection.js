@@ -1,4 +1,5 @@
 /**
+ * @deprecated FUNCTIONALITY BUILT INTO DP-TIMELINE using WidgetParent
  * The timeline selection plugin allows events to be selected and fires events when they are selected.
  * 
  * The selection can also be retrieved from this plugin
@@ -84,7 +85,8 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
      */
     onEventMouseEnter : function(e) {
         //Y.log("onEventMouseEnter", "info", "Y.DP.TimelineSelection");
-        e.target.addClass(this.get('host').getClassName('event', 'over'));
+        
+        e.currentTarget.addClass(this.get('host').getClassName('event', 'over'));
         
     },
     
@@ -95,7 +97,8 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
      */
     onEventMouseLeave : function(e) {
         //Y.log("onEventMouseLeave", "info", "Y.DP.TimelineSelection");
-        e.target.removeClass(this.get('host').getClassName('event', 'over'));
+        
+        e.currentTarget.removeClass(this.get('host').getClassName('event', 'over'));
     },
     
     /**
@@ -108,17 +111,18 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
         
         var currentSelection = this.get('selected');
         
-        if (e.target === currentSelection) {
-            // No need to reselect same thing
-            Y.log('Already Selected');
-        } else {
-            Y.log('Add selection');
-            
-            if (currentSelection) {
-                currentSelection.removeClass(this.get('host').getClassName('event', 'selected'));
-            }
-            this.set('selected', e.target);
+        if (e.currentTarget !== currentSelection) {
+            this.set('selected', e.currentTarget);
         }
+    },
+    
+    /**
+     * @description Default handler for custom event selectionChange
+     * @method _defSelectionChangeFn
+     * @private
+     */
+    _defSelectionChangeFn : function() {
+        Y.log("_defSelectionChangeFn", "info", "Y.DP.TimelineSelection");
     },
     
     /**
@@ -126,8 +130,12 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
      * @method _uiSetSelected
      * @private
      */
-    _uiSetSelected : function() {
+    _uiSetSelected : function(e) {
         Y.log("_uiSetSelected", "info", "Y.DP.TimelineSelection");
+        
+        if (e.prevVal) {
+            e.prevVal.removeClass(this.get('host').getClassName('event', 'selected'));
+        }
         
         this.get('selected').addClass(this.get('host').getClassName('event', 'selected'));
     }
@@ -137,6 +145,14 @@ Y.namespace('DP').TimelineSelection = Y.Base.create('gallery-dp-timeline-plugin-
 
 }, {
     
+    /**
+     * Name attribute, used to determine class names and event prefixes.
+     * 
+     * @property NAME
+     * @type String
+     * @protected
+     * @static
+     */
     NAME : "timelineSelection",
 
     /**
