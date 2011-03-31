@@ -22,4 +22,9 @@ YUI({
         
         dptimeline.render('#gallery-dp-timeline');
 
+
+        
+        Y.one('#setdate').on('click', function(e) {
+           dptimeline.set('date', Y.one('#date').get('value'));
+        })
 });

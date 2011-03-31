@@ -7,7 +7,6 @@ YUI({
 		height: '600px'
 	});*/
 	//yconsole.render('#log');
-
         
         var dptimeline = new Y.DP.Timeline({
             date: new Date(),
@@ -52,6 +51,10 @@ YUI({
 
            
            
+        }, ol);
+        
+        dptimeline.on('removeChild', function(e) {
+            this.set('visible', false);
         }, ol);
         
         Y.one('#cancel').on('click', function(e) {

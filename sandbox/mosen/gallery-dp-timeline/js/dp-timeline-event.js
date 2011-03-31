@@ -53,14 +53,17 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
      */
     renderUI : function () {
         
+        Y.log("renderUI:" + this.get('summary'), "info", "Y.DP.TimelineEvent");
         
         var parent = this.get('parent'),
             width = parent.getEventWidth(this),
-            leftOffset = parent.dateToOffset(this.get('start')),
+            myStartDate = this.get('start'),
+            leftOffset = parent.dateToOffset(myStartDate),
             slot = parent._getChildFreeSlot(this, leftOffset),
             topOffset = parent.slotToOffset(slot),
             rightOffset = leftOffset + width;
             
+            Y.log("mystartdate : " + myStartDate, "info", "Y.DP.TimelineEvent");    
             
         var evt = Node.create(Y.substitute('<span class="{titleClassName}">{title}</span>', {
             titleClassName : parent.getClassName('event', 'title'),
@@ -93,9 +96,14 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
      * @protected
      */
     bindUI : function () {
-        this.after('startChange', this._afterDateChange);
-        this.after('finishChange', this._afterDateChange);
-        this.after('slotChange', this._afterSlotChange);
+        this._parentEventHandles = [
+            this.after('startChange', this._afterDateChange),
+            this.after('finishChange', this._afterDateChange),
+            this.after('slotChange', this._afterSlotChange),
+            this.get('parent').after('dateChange', this._afterParentDateChange, this)
+        ];
+        
+        this.after('parentChange', this._afterParentChange); // Disconnect Events
     },
     
     /**
@@ -114,7 +122,9 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
      * @method destructor
      * @protected
      */
-    destructor: function() { },
+    destructor: function() { 
+        Y.log("destroy", "info", "Y.DP.TimelineEvent");
+    },
     
     /**
      * Recalculate duration and width after date changes
@@ -129,6 +139,23 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
     },
     
     /**
+     * Recalculate offset after parent date changes
+     * 
+     * @method _afterParentDateChange
+     * @param e {Event} ATTR Change Event
+     * @private
+     */
+    _afterParentDateChange : function(e) {
+        Y.log("_afterParentDateChange", "info", "Y.DP.TimelineEvent");
+        
+        var parent = this.get('parent'), 
+            leftOffset = parent.dateToOffset(this.get('start'));
+                     
+                     
+        this.get('boundingBox').set('style.left', leftOffset + 'px');
+    },
+    
+    /**
      * Reset the Y position when the slot attribute changes
      * 
      * @method _afterSlotChange
@@ -139,7 +166,27 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
         
         var topOffset = this.get('parent').slotToOffset(this.get('slot'));
         this.get('boundingBox').set('style.top', topOffset + 'px');
-    }
+    },
+    
+    /**
+     * Detach events when parent changes.
+     * 
+     * @method _afterParentChange
+     * @private
+     */
+    _afterParentChange : function() {
+        Y.log("_afterParentChange", "info", "Y.DP.TimelineEvent");
+        
+        Y.Array.each(this._parentEventHandles, function(h) { h.detach(); });
+    },
+    
+    /**
+     * Array of handles to parent events.
+     * 
+     * @property _parentEventHandles
+     * @type Array
+     */
+    _parentEventHandles : new Array()
 
 }, {
 
@@ -188,7 +235,8 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
         start : {
             value : new Date(),
             setter : function(v) {
-                return Lang.isString(v) ? Y.DataType.Date.parse(v) : v;
+                return Lang.isDate(v) ? v : new Date(Date.parse(v));
+                //return Lang.isString(v) ? Y.DataType.Date.parse(v) : v;
             }
         },
         
@@ -201,7 +249,8 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
         finish : {
             value : new Date(),
             setter : function(v) {
-                return Lang.isString(v) ? Y.DataType.Date.parse(v) : v;
+                return Lang.isDate(v) ? v : new Date(Date.parse(v));
+                //return Lang.isString(v) ? Y.DataType.Date.parse(v) : v;
             }
         },
 

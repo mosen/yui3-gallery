@@ -17,6 +17,8 @@ var TimelineUtil = {
         rangeToDuration : function(start, finish) {
             Y.log("rangeToDuration", "info", "Y.DP.TimelineUtil");
 
+            if (!Lang.isDate(start) || !Lang.isDate(finish)) return 0;
+
             // Adding a day to the duration because when we say start now finish now, we mean one day of duration
             // Because that is the minimum duration on the timeline
             var dayInMilliseconds = 1000*60*60*24,
@@ -37,6 +39,8 @@ var TimelineUtil = {
          */        
         rangeToDifference : function(start, finish) {
             Y.log("rangeToDifference: " + start + " - " + finish, "info", "Y.DP.TimelineUtil");
+            
+            if (!Lang.isDate(start) || !Lang.isDate(finish)) return 0;
 
             var dayInMilliseconds = 1000*60*60*24,
                 timeDiff = finish.getTime() - start.getTime(),

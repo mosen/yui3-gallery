@@ -31,6 +31,9 @@
          */
         initializer: function() {
             Y.log("init", "info", "Y.DP.Timeline");
+            
+            this.calculateDateOffsets();
+            this.publish("offsetChange", {});
         },
 
         /**
@@ -48,11 +51,7 @@
          * @protected
          */
         renderUI : function() {
-            
-            // Timeline headings, Date labels
-            this._nodeDayContainer = this._renderHeadings();
-            this._renderHeadingsDays(this._nodeDayContainer);
-            
+           
             // Background, Background highlights / markers
             this._nodeBackgroundContainer = this._renderBackgroundContainer();
             this._renderBackgroundHighlights(this._nodeBackgroundContainer);
@@ -65,8 +64,6 @@
             
             // Append created nodes to this widget
             this.get('contentBox').append(this._nodeBackgroundContainer);
-            this.get('contentBox').append(this._nodeDayContainer);
-            
             this.get('contentBox').append(this._nodeEventContainer);
         },
 
@@ -127,63 +124,6 @@
         },
         
         // Rendering Stage
-        
-        /**
-         * Render the containers for the headings
-         *
-         * @method _renderHeadings
-         * @return Y.Node Heading Container
-         * @private
-         */
-        _renderHeadings : function() {
-            //Y.log("_renderHeadings", "info", "Y.DP.Timeline");
-            
-            var nodeDayContainer = Node.create(Y.substitute(this.get('tplDayContainer'), {
-               className : this.getClassName('day', 'container')
-            }));
-            
-            return nodeDayContainer;
-        },
-        
-        /**
-         * Render all of the day labels
-         *
-         * @method _renderHeadingsDays
-         * @param parent {Node} Parent to render into
-         * @private
-         */
-        _renderHeadingsDays : function(parent) {
-            //Y.log("_renderHeadingsDays", "info", "Y.DP.Timeline");
-            
-            var currentDate = this.get('date'),
-                labelDate,
-                i;
-            
-            for (i = 0; i < this.get('length'); i++) {
-                
-                labelDate = new Date(currentDate.getTime());
-                labelDate.setDate(labelDate.getDate() + i);
-                 
-                var lblDay = Node.create(Y.substitute(this.get('tplDay'), {
-                    className : this.getClassName('day'),
-                    labelClassName : this.getClassName('day', 'label'),
-                    label : DataType.Date.format(labelDate, {format:"%a %e"})
-                })),
-                    leftOffset = this.dateToOffset(labelDate);
-                
-                lblDay.set('style.left', leftOffset + 'px');
-                lblDay.set('style.width', this.get('dayWidth') + 'px');
-
-                parent.append(lblDay);
-                
-                this._dates.push({ 
-                    date: labelDate, 
-                    left: leftOffset, 
-                    mid: leftOffset + Math.ceil(this.get('dayWidth') / 2) 
-                });
-            }
-            
-        },
         
         /**
          * Render the container that will hold events
@@ -353,11 +293,15 @@
          * Handle date change, update UI
          *
          * @method afterDateChange
+         * @param e {Event} Event facade (ATTR Change)
          * @private
          */
-        afterDateChange : function() {
+        _afterDateChange : function(e) {
             Y.log("afterDateChange", "info", "Y.DP.Timeline");
-          
+            
+            this.calculateDateOffsets();
+            //this.fire('offsetChange');
+            this.reflowEvents();
         },
         
         /**
@@ -380,7 +324,7 @@
          * @private
          */
         onEventMouseClick : function(e) {
-            Y.log("onEventMouseClick", "info", "Y.DP.Timeline");
+           Y.log("onEventMouseClick", "info", "Y.DP.Timeline");
                
            var item = e.target,
            domEvent = e.domEvent;
@@ -447,6 +391,42 @@
         // Date math functions
         
         /**
+         * Re-calculate offsets after a date change or during initialization.
+         * 
+         * Pre-calculating dates and offsets allows plugins to easily place items along date boundaries or see when the cursor
+         * hovers a certain date.
+         * 
+         * @method calculateDateOffsets
+         * @private
+         */
+        calculateDateOffsets : function() {
+            Y.log("calculateDateOffsets", "info", "Y.DP.Timeline");
+            
+            var currentDate = this.get('date'),
+                currentLength = this.get('length'),
+                i;
+                
+            this._dates = Array();
+
+            // Iterate from date set + number of days in "length"
+            for (i = 0; i < currentLength; i++) {
+
+                calcDate = new Date(currentDate.getTime());
+                calcDate.setDate(calcDate.getDate() + i);
+                
+                var dateLeftOffset = this.dateToOffset(calcDate);
+
+                this._dates.push({ 
+                    date: calcDate, 
+                    left: dateLeftOffset, 
+                    mid: dateLeftOffset + Math.ceil(this.get('dayWidth') / 2) 
+                });
+            } 
+            
+            this.fire('offsetChange');
+        },
+        
+        /**
          * Get the last date that should be shown on the timeline
          *
          * @method getEndDate
@@ -470,7 +450,8 @@
         dateToOffset : function(d) {
             // Y.log("dateToOffset", "info", "Y.DP.Timeline");
             
-            var duration = Y.DP.TimelineUtil.rangeToDifference(this.get('date'), d),
+            var originDate = this.get('date'),
+                duration = Y.DP.TimelineUtil.rangeToDifference(originDate, d),
                 offset = duration * this.get('dayWidth');
             
             Y.log("dateToOffset:" + offset + "px", "info", "Y.DP.Timeline");
@@ -511,7 +492,7 @@
         },
         
         /**
-         * Array containing information about dates shown
+         * Array of dates included in the current view, with calculated offsets.
          *
          * @property _dates
          * @private
@@ -539,26 +520,6 @@
             },
             
             // DOM Creation Templates
-            
-            /**
-             * Container for days of the week labels
-             *
-             * @attribute tplDayContainer
-             * @type String
-             */
-            tplDayContainer : {
-                value : '<div class="{className}"></div>'
-            },
-            
-            /**
-             * Box containing label for day of the week
-             *
-             * @attribute tplDay
-             * @type String
-             */
-            tplDay : {
-                value : '<div class="{className}"><span class="{labelClassName}">{label}</span></div>'
-            },
             
             /**
              * Container for events that may span days
@@ -622,8 +583,9 @@
              */
             date : {
                 value : Date(),
-                setter : function(value) {
-                    return Y.DP.TimelineUtil.zeroTime(value);
+                setter : function(v) {
+                    var d = Lang.isDate(v) ? v : new Date(Date.parse(v));
+                    return Y.DP.TimelineUtil.zeroTime(d);
                 }
             },
             

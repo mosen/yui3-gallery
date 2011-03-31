@@ -20,6 +20,7 @@
     background-repeat: repeat-x;
     
     box-shadow: 2px 2px 2px #888;
+    -webkit-box-shadow: 2px 2px 2px #888;
     color: #EEEEEE;
 }
 

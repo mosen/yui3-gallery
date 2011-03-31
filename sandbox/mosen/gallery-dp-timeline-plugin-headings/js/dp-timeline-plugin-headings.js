@@ -28,8 +28,8 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
      */
     initializer : function (config) {
 
-        // this.afterHostEvent('render', this.onHostRenderEvent);
         this.beforeHostMethod('render', this.onHostRender);
+        this.afterHostEvent('offsetChange', Y.bind(this._afterDateChange, this));
     },
 
     /**
@@ -46,6 +46,18 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
         
         this.get('host').get('contentBox').insert(this._nodeDayContainer);
     },
+    
+    /**
+     * Handle a date change and reset all the labels inside the headings
+     * 
+     * @method _afterDateChange
+     * @private
+     */
+    _afterDateChange : function() {
+        Y.log("_afterDateChange", "info", "Y.DP.TimelineHeadings");
+        
+        this._reflowHeadingsDays();
+    },
 
     /**
      * Destructor lifecycle implementation for the dp-timeline-plugin-headings class.
@@ -54,10 +66,6 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
      * @protected
      */
     destructor: function() { },
-    
-    
-    // Use NetBeans Code template "ymethod" to add methods here
-
 
     /**
      * Render the containers for the headings
@@ -101,43 +109,48 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
             lblDay.set('style.left', d.left + 'px');
             lblDay.set('style.width', host.get('dayWidth') + 'px');
 
+            this._dates.push(lblDay);
+
             parent.append(lblDay);
         }, this);
-    }
+    },
     
-    /*
-    _renderHeadingsDays : function(parent) {
-        //Y.log("_renderHeadingsDays", "info", "Y.DP.Timeline");
-
+    /**
+     * Recalculate the date labels, leaving the original containers intact
+     * 
+     * @method _reflowHeadingsDays
+     * @private
+     */
+    _reflowHeadingsDays : function() {
+        Y.log("_reflowHeadingsDays", "info", "Y.DP.TimelineHeadings");
+        
         var host = this.get('host'),
-            currentDate = host.get('date'),
-            labelDate,
-            i;
+            datesShown = host._dates,
+            labelNode;
+            
 
-        for (i = 0; i < host.get('length'); i++) {
-
-            labelDate = new Date(currentDate.getTime());
-            labelDate.setDate(labelDate.getDate() + i);
-
-            var lblDay = Node.create(Y.substitute(this.get('tplDay'), {
-                className : host.getClassName('day'),
-                labelClassName : host.getClassName('day', 'label'),
-                label : DataType.Date.format(labelDate, {format:"%a %e"})
-            })),
-                leftOffset = host.dateToOffset(labelDate);
-
-            lblDay.set('style.left', leftOffset + 'px');
-            lblDay.set('style.width', this.get('dayWidth') + 'px');
-
-            parent.append(lblDay);
-
-            this._dates.push({ 
-                date: labelDate, 
-                left: leftOffset, 
-                mid: leftOffset + Math.ceil(this.get('dayWidth') / 2) 
-            });
+        for (i = 0; i < datesShown.length; i++) {
+            labelNode = this._dates[i];
+            
+            Y.log("_reflowLabelNode:HostDate:" + datesShown[i].date, "info", "Y.DP.TimelineHeadings");
+            Y.log("_reflowLabelNode:" + labelNode, "info", "Y.DP.TimelineHeadings");
+            
+            if (labelNode !== undefined) {
+                var newLabel = DataType.Date.format(datesShown[i].date, {format:"%a %e"});
+                Y.log("_reflowHeadingsDays:newVal:" + newLabel , "info", "Y.DP.TimelineHeadings");
+                labelNode.one('span').set('innerHTML', DataType.Date.format(datesShown[i].date, {format:"%a %e"}));
+            }
+                //one('span').set('content', DataType.Date.format(datesShown[i].date, {format:"%a %e"}))
         }
-    }*/
+    },
+    
+    /**
+     * Array of object literals containing dates to node references for headings
+     * 
+     * @property _dates
+     * @type Array
+     */
+    _dates : Array()
 
 }, {
 
