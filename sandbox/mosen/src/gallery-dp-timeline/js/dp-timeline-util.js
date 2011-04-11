@@ -26,7 +26,8 @@ var TimelineUtil = {
                 // Adding a day to the duration because when we say start now finish now, we mean one day of duration
                 // Because that is the minimum duration on the timeline
                 var dayInMilliseconds = 1000*60*60*24,
-                    timeDiff = finish.getTime() - start.getTime(),
+                    tzOffsetDiff = (finish.getTimezoneOffset() - start.getTimezoneOffset()) * 60*1000, // Daylight savings taken into account
+                    timeDiff = finish.getTime() - start.getTime() - tzOffsetDiff,
                     timeDiffDays = Math.ceil(timeDiff/dayInMilliseconds) + 1;
 
                 return timeDiffDays;
@@ -51,10 +52,13 @@ var TimelineUtil = {
             } else {
 
                 var dayInMilliseconds = 1000*60*60*24,
-                    timeDiff = finish.getTime() - start.getTime(),
-                    timeDiffDays = Math.floor(timeDiff/dayInMilliseconds);
+                    tzOffsetDiff = (finish.getTimezoneOffset() - start.getTimezoneOffset()) * 60*1000, // Daylight savings taken into account
+                    timeDiff = finish.getTime() - start.getTime() - tzOffsetDiff,
+                    timeDiffDays = timeDiff/dayInMilliseconds;
+                    
+                    //Y.log("timeDiffDays:" + timeDiffDays, "info", "Y.DP.TimelineUtil");
 
-                return timeDiffDays;
+                return Math.floor(timeDiffDays);
             }
         },
         
@@ -68,7 +72,7 @@ var TimelineUtil = {
          * @static
          */
         zeroTime : function(d) {
-            Y.log("clearDateTime", "info", "Y.DP.TimelineUtil");
+            //Y.log("clearDateTime", "info", "Y.DP.TimelineUtil");
             
             d.setHours(0);
             d.setMinutes(0);
@@ -88,7 +92,7 @@ var TimelineUtil = {
          * @static
          */
         addDays : function(d, days) {
-            Y.log("addDays", "info", "Y.DP.TimelineUtil");
+            //Y.log("addDays", "info", "Y.DP.TimelineUtil");
             
             var returnDate = new Date();
             returnDate.setTime(d.getTime());
@@ -108,7 +112,7 @@ var TimelineUtil = {
          * @static
          */
         subDays : function(d, days) {
-            Y.log("subDays", "info", "Y.DP.TimelineUtil");
+            //Y.log("subDays", "info", "Y.DP.TimelineUtil");
             
             var returnDate = new Date();
             returnDate.setTime(d.getTime());

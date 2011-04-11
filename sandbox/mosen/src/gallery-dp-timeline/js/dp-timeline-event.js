@@ -98,7 +98,7 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
             this.after('startChange', this._afterDateChange),
             this.after('finishChange', this._afterDateChange),
             this.after('slotChange', this._afterSlotChange),
-            this.get('parent').after('dateChange', this._afterParentDateChange, this)
+            this.get('parent').after('offsetChange', this._afterParentDateChange, this)
         ];
         
         this.after('parentChange', this._afterParentChange); // Disconnect Events
@@ -160,7 +160,7 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
      * @private
      */
     _afterSlotChange : function(e) {
-        Y.log("_afterSlotChange", "info", "Y.DP.TimelineEvent");
+        //Y.log("_afterSlotChange", "info", "Y.DP.TimelineEvent");
         
         var topOffset = this.get('parent').slotToOffset(this.get('slot'));
         this.get('boundingBox').set('style.top', topOffset + 'px');

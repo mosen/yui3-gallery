@@ -13,7 +13,8 @@ YUI({
             children : [
                 {start: '2011-03-29', finish: '2011-04-03', summary: 'Project A', category: 'leave'},
                 {start: '2011-04-01', finish: '2011-04-01', summary: 'Project B', category: 'sku'},
-                {start: '2011-04-01', finish: '2011-04-10', summary: 'Project C', category: 'booked'}              
+                {start: '2011-04-01', finish: '2011-04-10', summary: 'Project C', category: 'booked'},
+                {start: '2011-04-15', finish: '2011-04-17', summary: 'Project D', category: 'booked'}
             ],
             plugins: [Y.DP.TimelineHeadings]
         });

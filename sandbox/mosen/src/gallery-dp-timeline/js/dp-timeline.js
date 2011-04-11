@@ -32,8 +32,6 @@
         initializer: function() {
             Y.log("init", "info", "Y.DP.Timeline");
                      
-            this.set('startDate', Y.DP.TimelineUtil.subDays(this.get('date'), Math.ceil(this.get('length') / 2)));
-            this.set('endDate', Y.DP.TimelineUtil.addDays(this.get('date'), Math.ceil(this.get('length') / 2)));
             this.calculateDateOffsets();
             this.publish("offsetChange", {});
         },
@@ -56,8 +54,11 @@
            
             // Background, Background highlights / markers
             this._nodeBackgroundContainer = this._renderBackgroundContainer();
-            this._renderBackgroundHighlights(this._nodeBackgroundContainer);
             
+            this._nodeHighlightsContainer = this._renderHighlightsContainer();
+            this._renderBackgroundHighlights(this._nodeHighlightsContainer);
+            this._nodeBackgroundContainer.append(this._nodeHighlightsContainer);
+
             // Events
             this._nodeEventContainer = this._renderEventContainer();
             
@@ -115,6 +116,12 @@
             
             this._ddNodeBackgroundContainer.on("drag", this._onBackgroundDrag, this);
                           
+            this.on("offsetChange", this.reflowEvents());
+            
+            this.on("offsetChange", function() {
+                this._resetBackgroundHighlights();
+                this._renderBackgroundHighlights(this._nodeHighlightsContainer);
+            });
         },
 
         /**
@@ -123,10 +130,6 @@
          * @method syncUI
          */
         syncUI : function() {
-            //Y.log("This timeline will finish on " + this.getEndDate(), "info", "Y.DP.Timeline");
-            
-            this.set('startDate', Y.DP.TimelineUtil.subDays(this.get('date'), Math.ceil(this.get('length') / 2)));
-            this.set('endDate', Y.DP.TimelineUtil.addDays(this.get('date'), Math.ceil(this.get('length') / 2)));
             
             this.get('boundingBox').set('style.width', this.get('viewLength') * this.get('dayWidth') + 'px');
             this.get('contentBox').set('style.left', '400px'); // TODO temporary
@@ -169,6 +172,25 @@
             
             return nodeBg;
         },
+                 
+        /**
+         * Render the background objects
+         *
+         * @method _renderHighlightsContainer
+         * @return Node Container for highlights
+         * @private
+         */
+        _renderHighlightsContainer : function() {
+            //Y.log("_renderBackgroundContainer", "info", "Y.DP.Timeline");
+            
+            var nodeBg = Node.create(Y.substitute(this.get('tplHighlightContainer'), {
+                className : this.getClassName('highlights')
+            }));
+            nodeBg.set('style.width', this.get('length') * this.get('dayWidth') + 'px');
+            nodeBg.set('style.left', this.dateToGlobalOffset(this.get('startDate')) + 'px');
+            
+            return nodeBg;
+        },       
         
         /**
          * Render highlight objects on the background which indicate holidays.
@@ -195,6 +217,19 @@
                 }
             
             }, this);
+        },
+        
+        /**
+         * Reset the background highlight container for new objects to be added.
+         * 
+         * 
+         * @method _resetBackgroundHighlights
+         * @private
+         */
+        _resetBackgroundHighlights : function() {
+            Y.log("_resetBackgroundHighlights", "info", "Y.DP.Timeline");
+            
+            this._nodeHighlightsContainer.set('innerHTML', '');
         },
         
         // Child Event Calculation / Modification
@@ -313,12 +348,7 @@
         _afterDateChange : function(e) {
             Y.log("afterDateChange", "info", "Y.DP.Timeline");
             
-            this.set('startDate', Y.DP.TimelineUtil.subDays(this.get('date'), Math.ceil(this.get('length') / 2)));
-            this.set('endDate', Y.DP.TimelineUtil.addDays(this.get('date'), Math.ceil(this.get('length') / 2)));
-            
             this.calculateDateOffsets();
-            //this.fire('offsetChange');
-            this.reflowEvents();
         },
         
         /**
@@ -341,28 +371,42 @@
          * @private
          */
         _onBackgroundDrag : function(e) {
-            //Y.log("_onBackgroundDrag", "info", "Y.DP.Timeline");
             
-            
-            var leftTriggerOffset = this.get('dayWidth') * this.get('triggerLength'),
-                rightTriggerOffset = 200;
+            var leftTriggerOffset = this.get('dayWidth') * 8,
+                rightTriggerOffset = 100;
                     
             if (this.get('contentBox').get('offsetLeft') > leftTriggerOffset) {
-                Y.log("_onBackgroundDrag:Trigger left offset passed", "warn", "Y.DP.Timeline");
-            } else if (this.get('contentBox').get('offsetLeft') < rightTriggerOffset) {
-                Y.log("_onBackgroundDrag:Trigger right offset passed:e.pageX=" + e.pageX, "warn", "Y.DP.Timeline");
+                Y.log("_onBackgroundDrag:Trigger left offset passed:e.pageX=" + e.pageX, "warn", "Y.DP.Timeline");
                 
                 e.preventDefault();
+                
                 this.get('contentBox').set('style.left', '400px');
-                //Y.log(this.get('contentBox').get('style.left'));
+
+                this._ddNodeBackgroundContainer.stopDrag();
+
+                Y.log("current date before drag:" + this.get('date'), "info", "Y.DP.Timeline");
+
+                var adjustedDate = Y.DP.TimelineUtil.subDays(this.get('date'), 4);
+                Y.log("adjusted date via drag:" + adjustedDate, "info", "Y.DP.Timeline");
+                this.set('date', adjustedDate);
                 
-                //this._ddNodeBackgroundContainer.stopDrag();
                 
-                this.set('date', Y.DP.TimelineUtil.addDays(this.get('date'), 2));
+                
+                
+            } else if (this.get('contentBox').get('offsetLeft') < (rightTriggerOffset + 20)) { // +20 pixels because usually the drag goes past the rightedge before re-centering
+                Y.log("_onBackgroundDrag:Right offset passed, offsetLeft=" + this.get('contentBox').get('offsetLeft') + ", e.pageX=" + e.pageX, "warn", "Y.DP.Timeline");
+                
+                e.preventDefault();
+                
+                this.get('contentBox').set('style.left', '400px');
+               
+                this._ddNodeBackgroundContainer.stopDrag();
+               
+                this.set('date', Y.DP.TimelineUtil.addDays(this.get('date'), 3));
+                
+                this._ddNodeBackgroundContainer.start();
                 
             }
-            //Y.log(e.pageX);
-            //Y.log(e.info);
         },
         
         // DOM EVENT HANDLERS
@@ -454,14 +498,15 @@
          * @private
          */
         calculateDateOffsets : function() {
-            Y.log("calculateDateOffsets", "info", "Y.DP.Timeline");
-            
+             
             var currentDate = this.get('startDate'),
                 currentLength = this.get('length'),
                 calcDate,
                 dateLeftOffset,
                 dateLeftOffsetLocal,
                 i;
+                
+            Y.log("calculateDateOffsets currentDate:" + currentDate, "info", "Y.DP.Timeline");
                 
             this._dates = Array();
 
@@ -481,6 +526,8 @@
                     mid: dateLeftOffset + Math.ceil(this.get('dayWidth') / 2),
                     midLocal: dateLeftOffsetLocal + Math.ceil(this.get('dayWidth') / 2)
                 });
+                
+                Y.log("date:"+calcDate+" left:"+dateLeftOffset, "info", "Y.DP.Timeline");
             }
             
             Y.log("Offsets Calculated :" + this._dates.length, "info", "Y.DP.Timeline");
@@ -536,13 +583,12 @@
          * @public
          */
         dateToGlobalOffset : function(d) {
-            //Y.log("dateToGlobalOffset", "info", "Y.DP.Timeline");
-            
+
             var originDate = this.get('date'),
                 duration = Y.DP.TimelineUtil.rangeToDifference(originDate, d),
                 offset = duration * this.get('dayWidth');
             
-            //Y.log("dateToGlobalOffset:" + offset + "px", "info", "Y.DP.Timeline");
+            Y.log("dateToGlobalOffset:" + offset + "px" + " mydate:" + originDate + " date:" + d + " duration:" + duration, "info", "Y.DP.Timeline");
             
             return offset;
         },
@@ -581,7 +627,7 @@
          * @private
          */
         slotToOffset : function(slot) {
-            Y.log("slotToOffset", "info", "Y.DP.Timeline");
+            //Y.log("slotToOffset", "info", "Y.DP.Timeline");
             
             return slot * (this.get('eventHeight')) + slot * this.get('gutter');
         },
@@ -646,12 +692,23 @@
             },
             
             /**
-             * Template for the background container which defines background style and holds highlighted days
+             * Template for the background container which defines background style
              *
              * @attribute tplBackgroundContainer
              * @type String
              */
             tplBackgroundContainer : {
+                value : '<div class="{className}"></div>'
+            },
+            
+            
+            /**
+             * Template for the highlight container which holds highlighted days
+             *
+             * @attribute tplHighlightContainer
+             * @type String
+             */
+            tplHighlightContainer : {
                 value : '<div class="{className}"></div>'
             },
             
@@ -696,7 +753,10 @@
              * @type Date
              */
             startDate : {
-                value : Date()
+                getter : function() {
+                    var sd = Y.DP.TimelineUtil.subDays(this.get('date'), Math.ceil(this.get('length') / 2));
+                    return sd;
+                }
             },
             
             /**
@@ -721,7 +781,9 @@
              * @type Date
              */
             endDate : {
-                value : Date()
+                getter : function() {
+                    return Y.DP.TimelineUtil.addDays(this.get('date'), Math.ceil(this.get('length') / 2));
+                }
             },
             
             /**
