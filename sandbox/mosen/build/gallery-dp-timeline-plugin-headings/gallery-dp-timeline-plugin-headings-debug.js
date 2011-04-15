@@ -1,3 +1,5 @@
+YUI.add('gallery-dp-timeline-plugin-headings', function(Y) {
+
 /**
  *
  *
@@ -201,3 +203,6 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
 
 });
 
+
+
+}, '@VERSION@' ,{requires:['base', 'plugin', 'gallery-dp-timeline']});

@@ -1,6 +1,6 @@
 YUI({
     /* filter: 'debug' */
-}).use('gallery-dp-timeline', 'gallery-dp-timeline-plugin-insertion', 'gallery-dp-timeline-plugin-headings','overlay', 'console', function(Y) {
+}).use('gallery-dp-dd-plugin-loopingdrag', 'gallery-dp-timeline', 'gallery-dp-timeline-plugin-insertion', 'gallery-dp-timeline-plugin-headings','overlay', 'console', function(Y) {
         /*
 	var yconsole = new Y.Console({
 		newestOnTop: false,

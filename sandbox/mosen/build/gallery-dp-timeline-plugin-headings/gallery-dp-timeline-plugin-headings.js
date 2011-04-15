@@ -1,3 +1,5 @@
+YUI.add('gallery-dp-timeline-plugin-headings', function(Y) {
+
 /**
  *
  *
@@ -39,7 +41,6 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
      * @private
      */
     onHostRender : function() {
-        Y.log("onHostRender", "info", "Y.DP.TimelineHeadings");
         
         this._nodeDayContainer = this._renderHeadings();
         this._renderHeadingsDays(this._nodeDayContainer);
@@ -54,7 +55,6 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
      * @private
      */
     _afterDateChange : function() {
-        Y.log("_afterDateChange", "info", "Y.DP.TimelineHeadings");
         
         this._reflowHeadingsDays();
     },
@@ -75,7 +75,6 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
      * @private
      */
     _renderHeadings : function() {
-        //Y.log("_renderHeadings", "info", "Y.DP.Timeline");
 
         var nodeDayContainer = Node.create(Y.substitute(this.get('tplDayContainer'), {
            className : this.get('host').getClassName('day', 'container')
@@ -93,7 +92,6 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
      * @private
      */
     _renderHeadingsDays : function(parent) {
-        //Y.log("_renderHeadingsDays", "info", "Y.DP.Timeline");
 
         var host = this.get('host'),
             datesShown = host._dates;
@@ -122,7 +120,6 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
      * @private
      */
     _reflowHeadingsDays : function() {
-        Y.log("_reflowHeadingsDays", "info", "Y.DP.TimelineHeadings");
         
         var host = this.get('host'),
             datesShown = host._dates,
@@ -132,12 +129,9 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
         for (i = 0; i < datesShown.length; i++) {
             labelNode = this._dates[i];
             
-            //Y.log("_reflowLabelNode:HostDate:" + datesShown[i].date, "info", "Y.DP.TimelineHeadings");
-            //Y.log("_reflowLabelNode:" + labelNode, "info", "Y.DP.TimelineHeadings");
             
             if (labelNode !== undefined) {
                 var newLabel = DataType.Date.format(datesShown[i].date, {format:"%a %e"});
-                //Y.log("_reflowHeadingsDays:newVal:" + newLabel , "info", "Y.DP.TimelineHeadings");
                 labelNode.one('span').set('innerHTML', DataType.Date.format(datesShown[i].date, {format:"%a %e"}));
             }
                 //one('span').set('content', DataType.Date.format(datesShown[i].date, {format:"%a %e"}))
@@ -201,3 +195,6 @@ Y.namespace('DP').TimelineHeadings = Y.Base.create( 'gallery-dp-timeline-plugin-
 
 });
 
+
+
+}, '@VERSION@' ,{requires:['base', 'plugin', 'gallery-dp-timeline']});

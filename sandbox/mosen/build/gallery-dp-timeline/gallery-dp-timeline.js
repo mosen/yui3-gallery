@@ -1,3 +1,416 @@
+YUI.add('gallery-dp-timeline', function(Y) {
+
+var Lang = Y.Lang;
+
+/**
+ * Utility methods used to calculate dates and times for timeline
+ * 
+ * @class DP.TimelineUtil
+ */
+var TimelineUtil = {
+    
+        /**
+         * @method rangeToDuration
+         * @description Convert a range (2 dates) into a duration. Negative durations are possible. Finish date inclusive
+         * @param start {Date} Starting date
+         * @param finish {Date} Finishing date
+         * @return Number Duration in days, may be negative
+         * @public
+         * @static
+         */
+        rangeToDuration : function(start, finish) {
+
+            if (!Lang.isDate(start) || !Lang.isDate(finish)) {
+                return 0;
+            } else {
+
+                // Adding a day to the duration because when we say start now finish now, we mean one day of duration
+                // Because that is the minimum duration on the timeline
+                var dayInMilliseconds = 1000*60*60*24,
+                    tzOffsetDiff = (finish.getTimezoneOffset() - start.getTimezoneOffset()) * 60*1000, // Daylight savings taken into account
+                    timeDiff = finish.getTime() - start.getTime() - tzOffsetDiff,
+                    timeDiffDays = Math.ceil(timeDiff/dayInMilliseconds) + 1;
+
+                return timeDiffDays;
+            }
+        },
+        
+        /**
+         * @description Convert a range (2 dates) into a duration. Negative durations are possible. Finish date not inclusive
+         * @method rangeToDifference
+         * @param start {Date} Starting date
+         * @param finish {Date} Finishing date
+         * @return Number Duration in days, may be negative
+         * @public
+         * @static
+         */        
+        rangeToDifference : function(start, finish) {
+            
+            if (!Lang.isDate(start) || !Lang.isDate(finish)) {
+            
+                return 0;
+            } else {
+
+                var dayInMilliseconds = 1000*60*60*24,
+                    tzOffsetDiff = (finish.getTimezoneOffset() - start.getTimezoneOffset()) * 60*1000, // Daylight savings taken into account
+                    timeDiff = finish.getTime() - start.getTime() - tzOffsetDiff,
+                    timeDiffDays = timeDiff/dayInMilliseconds;
+                    
+
+                return Math.floor(timeDiffDays);
+            }
+        },
+        
+        
+        /**
+         * @method zeroTime
+         * @description Clear the time from a date
+         * @param d {Date} Date to set time back to 00:00
+         * @return Date date with time cleared
+         * @public
+         * @static
+         */
+        zeroTime : function(d) {
+            
+            d.setHours(0);
+            d.setMinutes(0);
+            d.setSeconds(0);
+            d.setMilliseconds(0);
+            
+            return d;
+        },
+        
+        /**
+         * @description Get a new date object with days added
+         * @method addDays
+         * @param d {Date} Date used as basis
+         * @param days {Number} Number of days to add
+         * @return Date Date with days added
+         * @public
+         * @static
+         */
+        addDays : function(d, days) {
+            
+            var returnDate = new Date();
+            returnDate.setTime(d.getTime());
+            returnDate.setDate(returnDate.getDate() + days);
+
+            return returnDate;
+        },
+        
+        /**
+         * @description Get a new date object with days subtracted
+         * 
+         * @method subDays
+         * @param d {Date} Date used as basis
+         * @param days {Number} Number of days to sub
+         * @return Date Date with days subtracted
+         * @public
+         * @static
+         */
+        subDays : function(d, days) {
+            
+            var returnDate = new Date();
+            returnDate.setTime(d.getTime());
+            returnDate.setDate(returnDate.getDate() - days);
+
+            return returnDate;
+        }
+};
+
+
+Y.namespace('DP').TimelineUtil = TimelineUtil;
+
+
+/* Any frequently used shortcuts, strings and constants */
+var Lang = Y.Lang,
+    Node = Y.Node,
+    contentClassName = Y.ClassNameManager.getClassName('gallery-dp-timeline-event', 'content'),
+    boundingClassName = Y.ClassNameManager.getClassName('gallery-dp-timeline-event', 'bounding');
+
+/**
+ * Timeline event represents a single event on a Y.DP.Timeline
+ *
+ * @class DP.TimelineEvent
+ * @extends Widget
+ */
+Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.Widget, [Y.WidgetChild], {
+
+    /**
+     * Content Template
+     * 
+     * @property CONTENT_TEMPLATE
+     * @protected
+     */
+    CONTENT_TEMPLATE : '<div class="' + contentClassName + '"></div>',
+    
+    /**
+     * Bounding Template
+     * 
+     * @property BOUNDING_TEMPLATE
+     * @protected
+     */
+    BOUNDING_TEMPLATE : "<div></div>",
+
+    /**
+     * Y.Widget Lifecycle : Initializer
+     *
+     * @method initializer
+     * @param config {Object} Configuration object
+     * @constructor
+     * @protected
+     */
+    initializer : function (config) {
+
+        this._afterDateChange(); // Calculate Duration
+    },
+
+    /**
+     * Create the DOM structure for the dp-timeline-event.
+     *
+     * @method renderUI
+     * @protected
+     */
+    renderUI : function () {
+        
+        
+        var parent = this.get('parent'),
+            width = parent.getEventWidth(this),
+            myStartDate = this.get('start'),
+            leftOffset = parent.dateToLocalOffset(myStartDate),
+            slot = parent._getChildFreeSlot(this, leftOffset),
+            topOffset = parent.slotToOffset(slot),
+            rightOffset = leftOffset + width,
+            slots = parent.get('slots');
+            
+            
+        var evt = Node.create(Y.substitute('<span class="{titleClassName}">{title}</span>', {
+            titleClassName : parent.getClassName('event', 'title'),
+            title : this.get('summary')
+        }));
+        
+        this.get('contentBox').append(evt);
+        
+        this.set('slot', slot);
+        
+        
+        this.get('boundingBox').set('style.left', leftOffset + 'px');
+        this.get('boundingBox').set('style.top', topOffset + 'px');
+        this.set('width', width + 'px');
+        
+        slots[slot] = rightOffset;
+        this.get('parent').set('slots', slots);        
+        
+    },
+
+
+    /**
+     * Y.Widget Lifecycle
+     *
+     * @method bindUI
+     * @protected
+     */
+    bindUI : function () {
+        this._parentEventHandles = [
+            this.after('startChange', this._afterDateChange),
+            this.after('finishChange', this._afterDateChange),
+            this.after('slotChange', this._afterSlotChange),
+            this.get('parent').after('offsetChange', this._afterParentDateChange, this)
+        ];
+        
+        this.after('parentChange', this._afterParentChange); // Disconnect Events
+    },
+    
+    /**
+     * Synchronizes the DOM state with the attribute settings
+     *
+     * @method syncUI
+     * @protected
+     */
+    syncUI : function () {
+        this.get('contentBox').addClass(this.getClassName(this.get('category')));
+    },
+
+    /**
+     * Destructor lifecycle implementation for the dp-timeline-event class.
+     *
+     * @method destructor
+     * @protected
+     */
+    destructor: function() { 
+    },
+    
+    /**
+     * Recalculate duration and width after date changes
+     * @method _afterDateChange
+     * @private
+     */
+    _afterDateChange : function() {
+        
+        // Update calculated duration
+        this.set('duration', Y.DP.TimelineUtil.rangeToDuration(this.get('start'), this.get('finish')));
+    },
+    
+    /**
+     * Recalculate offset after parent date changes
+     * 
+     * @method _afterParentDateChange
+     * @param e {Event} ATTR Change Event
+     * @private
+     */
+    _afterParentDateChange : function(e) {
+        
+        var parent = this.get('parent'), 
+            leftOffset = parent.dateToLocalOffset(this.get('start'));
+                     
+                     
+        this.get('boundingBox').set('style.left', leftOffset + 'px');
+    },
+    
+    /**
+     * Reset the Y position when the slot attribute changes
+     * 
+     * @method _afterSlotChange
+     * @private
+     */
+    _afterSlotChange : function(e) {
+        
+        var topOffset = this.get('parent').slotToOffset(this.get('slot'));
+        this.get('boundingBox').set('style.top', topOffset + 'px');
+    },
+    
+    /**
+     * Detach events when parent changes.
+     * 
+     * @method _afterParentChange
+     * @private
+     */
+    _afterParentChange : function() {
+        
+        Y.Array.each(this._parentEventHandles, function(h) { h.detach(); });
+    },
+    
+    /**
+     * Array of handles to parent events.
+     * 
+     * @property _parentEventHandles
+     * @type Array
+     */
+    _parentEventHandles : []
+
+}, {
+
+    /**
+     * Required NAME static field, to identify the Widget class and 
+     * used as an event prefix, to generate class names etc. (set to the 
+     * class name in camel case).
+     *
+     * @property NAME
+     * @type String
+     * @static
+     */
+    NAME : "timelineEvent",
+
+    /**
+     * Static Object hash used to capture existing markup for progressive
+     * enhancement.  Keys correspond to config attribute names and values
+     * are selectors used to inspect the contentBox for an existing node
+     * structure.
+     *
+     * @property HTML_PARSER
+     * @type Object
+     * @protected
+     * @static
+     */
+    HTML_PARSER : {},
+
+    /**
+     * Static property used to define the default attribute configuration of
+     * the Widget.
+     *
+     * @property ATTRS
+     * @type Object
+     * @protected
+     * @static
+     */
+    ATTRS : { 
+
+        
+        /**
+         * Starting date of the event (inclusive)
+         * 
+         * @attribute start
+         * @type Date
+         */
+        start : {
+            value : new Date(),
+            setter : function(v) {
+                return Lang.isDate(v) ? v : new Date(Date.parse(v));
+                //return Lang.isString(v) ? Y.DataType.Date.parse(v) : v;
+            }
+        },
+        
+        /**
+         * Ending date of the event (non inclusive)
+         * 
+         * @attribute finish
+         * @type Date
+         */
+        finish : {
+            value : new Date(),
+            setter : function(v) {
+                return Lang.isDate(v) ? v : new Date(Date.parse(v));
+                //return Lang.isString(v) ? Y.DataType.Date.parse(v) : v;
+            }
+        },
+
+        /**
+         * Duration (in days) of the event
+         * 
+         * @attribute duration
+         * @type Number
+         */
+        duration : {
+            value : 0,
+            validator : Lang.isNumber
+        },
+        
+        /**
+         * Title of the event
+         * 
+         * @attribute summary
+         * @type String
+         */
+        summary : {
+            value : '',
+            validator : Lang.isString
+        },
+        
+        /**
+         * Category of the event, used for colouring
+         * 
+         * @attribute category
+         * @type String
+         */
+        category : {
+            value : '',
+            validator : Lang.isString
+        },
+        
+        /**
+         * Vertical slot to fit this event into, parent will calculate this
+         * 
+         * @attribute slot
+         * @type Number
+         */
+        slot : {
+            value : undefined
+        }
+
+        // Use NetBeans Code Template "yattr" to add attributes here
+    }
+});
+
 //YUI.add('dp-timeline', function(Y) {
 
 /**
@@ -30,7 +443,6 @@
          * @protected
          */
         initializer: function() {
-            Y.log("init", "info", "Y.DP.Timeline");
                      
             this.calculateDateOffsets();
             this.publish("offsetChange", {});
@@ -116,9 +528,7 @@
                 offset: 100
             });
             
-            Y.log(this._ddNodeBackgroundContainer.loopingDrag);
-            
-            this._ddNodeBackgroundContainer.after("viewLoop", this._onViewLoop());
+            this._ddNodeBackgroundContainer.loopingDrag.after("viewLoop", this._onViewLoop());
             
             //this._ddNodeBackgroundContainer.on("drag:align", this._onBackgroundDrag, this);
                           
@@ -151,7 +561,6 @@
          * @private
          */
         _renderEventContainer : function() {
-            //Y.log("_renderEventContainer", "info", "Y.DP.Timeline");
             
             var eventContainer = Node.create(Y.substitute(this.get('tplEventContainer'), {
                 className : this.getClassName('event', 'container')
@@ -168,7 +577,6 @@
          * @private
          */
         _renderBackgroundContainer : function() {
-            //Y.log("_renderBackgroundContainer", "info", "Y.DP.Timeline");
             
             var nodeBg = Node.create(Y.substitute(this.get('tplBackgroundContainer'), {
                 className : this.getClassName('background')
@@ -187,7 +595,6 @@
          * @private
          */
         _renderHighlightsContainer : function() {
-            //Y.log("_renderBackgroundContainer", "info", "Y.DP.Timeline");
             
             var nodeBg = Node.create(Y.substitute(this.get('tplHighlightContainer'), {
                 className : this.getClassName('highlights')
@@ -206,12 +613,10 @@
          * @private
          */
         _renderBackgroundHighlights : function(parent) {
-            Y.log("_renderBackgroundHighlights", "info", "Y.DP.Timeline");
             
             Y.Array.each(this._dates, function(d){
             
                 if (this.isDatePublicHoliday(d.date)) {
-                    //Y.log("is public holiday :" + d.date, "info", "Y.DP.Timeline");
 
                     var nodeBgHl = Node.create(Y.substitute(this.get('tplBackgroundHighlight'), {
                         className : this.getClassName('background', 'highlight')
@@ -233,7 +638,6 @@
          * @private
          */
         _resetBackgroundHighlights : function() {
-            Y.log("_resetBackgroundHighlights", "info", "Y.DP.Timeline");
             
             this._nodeHighlightsContainer.set('innerHTML', '');
         },
@@ -250,7 +654,6 @@
          * @private
          */
         _getChildFreeSlot : function(e, leftedge) {
-            //Y.log("_getFreeSlot: " + e.get('summary'), "info", "Y.DP.Timeline");
             
             var slots = this.get('slots'),
                 i;
@@ -261,10 +664,8 @@
             
             for (i = 0; i < slots.length; i++) {
                 if (slots[i] <= leftedge) {
-                    //Y.log("_getFreeSlot: Found free slot " + i + " because slot rightedge was " + slots[i] + " vs our leftedge " + leftedge, "info", "Y.DP.Timeline");
                     break;
                 } else {
-                    //Y.log("_getFreeSlot: Cant use slot " + i + " because slot rightedge was " + slots[i] + " vs our leftedge " + leftedge, "info", "Y.DP.Timeline");
                 }
             }
             
@@ -278,7 +679,6 @@
          * @public
          */
         reflowEvents : function() {
-            Y.log("reflowEvents", "info", "Y.DP.Timeline");
             
             var childLeftOffset,
                 childSlot,
@@ -291,7 +691,6 @@
                 c.set('slot', undefined);
                 childLeftOffset = this.dateToLocalOffset(c.get('start'));
                 childSlot = this._getChildFreeSlot(c, childLeftOffset);
-                Y.log("Reflowing Child: " + c.get('summary') + " to slot: " + childSlot + " at offset: " + childLeftOffset + "px", "info", "Y.DP.Timeline");
                 
                 c.set('slot', childSlot);
                 slots = this.get('slots');
@@ -309,7 +708,6 @@
          * @private
          */
         getEventWidth : function(e) {
-            Y.log("getEventWidth", "info", "Y.DP.Timeline");
             
             return this.get('dayWidth') * e.get('duration');
         },
@@ -322,7 +720,6 @@
          * @private
          */
         removeSelected : function() {
-            Y.log("removeSelected", "info", "Y.DP.Timeline");
             
             // TODO this does not correctly determine whether the selection is a node or not.
             if (this.get('selection') !== undefined) {
@@ -339,7 +736,6 @@
          * @private
          */
         _afterChildrenChange : function() {
-            Y.log("_afterChildrenChange", "info", "Y.DP.Timeline");
             
             this.reflowEvents();
         },
@@ -352,7 +748,6 @@
          * @private
          */
         _afterDateChange : function(e) {
-            Y.log("afterDateChange", "info", "Y.DP.Timeline");
             
             this.calculateDateOffsets();
         },
@@ -365,7 +760,6 @@
          * @private
          */
         afterSelectionChange : function(e) {
-            Y.log("afterSelectionChange", "info", "Y.DP.Timeline");
         },
         
         /**
@@ -376,7 +770,6 @@
          * @private
          */
         _onViewLoop : function() {
-            Y.log("onViewLoop", "info", "Y.DP.Timeline");
         },
         
         /**
@@ -395,7 +788,6 @@
                 myOffset = this.get('contentBox').getXY();
             
             if (myOffset[0] > leftTriggerOffset) {
-                Y.log("_onBackgroundDrag:TimelineXOffset[" + myOffset[0] + "] Exceeded leftTriggerOffset[" + leftTriggerOffset + "]", "warn", "Y.DP.Timeline");
                 
                 e.preventDefault();
                 
@@ -403,27 +795,21 @@
                 //this.get('contentBox').setXY(400,1);
                 //this.get('contentBox').set('style.left', '400px');
                 
-                Y.log("dd actXY x:" + this._ddNodeBackgroundContainer.actXY[0], "warn", "Y.DP.Timeline");
                 //
                 this._ddNodeBackgroundContainer.actXY = [400,77];
                 
-                Y.log("Readjusted Drag actXY x:" + this._ddNodeBackgroundContainer.actXY[0] + " y:" + this._ddNodeBackgroundContainer.actXY[1], "warn", "Y.DP.Timeline");
                 //this._ddNodeBackgroundContainer.stopDrag();
                 this.get('contentBox').setXY([400,1]);
                 
-                Y.log("dd node new TimelineXOffset: " + this.get('contentBox').getXY()[0], "info", "Y.DP.Timeline");
 
-                Y.log("current date before drag:" + this.get('date'), "info", "Y.DP.Timeline");
 
                 var adjustedDate = Y.DP.TimelineUtil.subDays(this.get('date'), 4);
-                Y.log("adjusted date via drag:" + adjustedDate, "info", "Y.DP.Timeline");
                 this.set('date', adjustedDate);
                 
                 
                 
                 
             } else if (myOffset[1] < (rightTriggerOffset + 20)) { // +20 pixels because usually the drag goes past the rightedge before re-centering
-                Y.log("_onBackgroundDrag:Right offset passed, offsetLeft=" + this.get('contentBox').get('offsetLeft') + ", e.pageX=" + e.pageX, "warn", "Y.DP.Timeline");
                 
                 e.preventDefault();
                 
@@ -448,7 +834,6 @@
          * @private
          */
         onEventMouseClick : function(e) {
-           Y.log("onEventMouseClick", "info", "Y.DP.Timeline");
                
            var item = e.target,
            domEvent = e.domEvent;
@@ -472,7 +857,6 @@
          * @private
          */
         onEventMouseEnter : function(e) {
-            //Y.log("onEventMouseEnter", "info", "Y.DP.Timeline");
             e.currentTarget.addClass(this.getClassName('event', 'over'));
         },
         
@@ -483,7 +867,6 @@
          * @private
          */
         onEventMouseLeave : function(e) {
-            //Y.log("onEventMouseLeave", "info", "Y.DP.Timeline");
             e.currentTarget.removeClass(this.getClassName('event', 'over'));
         },
         
@@ -495,7 +878,6 @@
          * @private
          */
         onEventKeyDelete : function(e) {
-            Y.log("onEventKeyDelete", "info", "Y.DP.Timeline");
             
             this.get('selection').remove();
         },
@@ -507,7 +889,6 @@
          * @private
          */
         onEventMouseDblClick : function() {
-            Y.log("onEventMouseDblClick", "info", "Y.DP.Timeline");
             
             this.add(this.get('childPrototype'));
         },
@@ -535,7 +916,6 @@
                 dateLeftOffsetLocal,
                 i;
                 
-            Y.log("calculateDateOffsets currentDate:" + currentDate, "info", "Y.DP.Timeline");
                 
             this._dates = Array();
 
@@ -556,10 +936,8 @@
                     midLocal: dateLeftOffsetLocal + Math.ceil(this.get('dayWidth') / 2)
                 });
                 
-                //Y.log("date:"+calcDate+" left:"+dateLeftOffset, "info", "Y.DP.Timeline");
             }
             
-            Y.log("Offsets Calculated :" + this._dates.length, "info", "Y.DP.Timeline");
             
             this.fire('offsetChange');
         },
@@ -572,7 +950,6 @@
          * @public
          */
         getEndDate : function() {
-            Y.log("getEndDate", "info", "Y.DP.Timeline");
             
             // One day is deducted because the word length implies that the starting day is included in that range
             return Y.DP.TimelineUtil.addDays(this.get('date'), (this.get('length') - 1));
@@ -587,13 +964,11 @@
          * @private
          */
         dateToOffset : function(d) {
-            // Y.log("dateToOffset", "info", "Y.DP.Timeline");
             
             var originDate = this.get('date'),
                 duration = Y.DP.TimelineUtil.rangeToDifference(originDate, d),
                 offset = duration * this.get('dayWidth');
             
-            Y.log("dateToOffset:" + offset + "px", "info", "Y.DP.Timeline");
             
             return offset;
         },
@@ -617,7 +992,6 @@
                 duration = Y.DP.TimelineUtil.rangeToDifference(originDate, d),
                 offset = duration * this.get('dayWidth');
             
-            //Y.log("dateToGlobalOffset:" + offset + "px" + " mydate:" + originDate + " date:" + d + " duration:" + duration, "info", "Y.DP.Timeline");
             
             return offset;
         },
@@ -636,13 +1010,11 @@
          * @public
          */
         dateToLocalOffset : function(d) {
-            //Y.log("dateToLocalOffset", "info", "Y.DP.Timeline");
             
             var originDate = this.get('startDate'),
                 duration = Y.DP.TimelineUtil.rangeToDifference(originDate, d),
                 offset = duration * this.get('dayWidth');
             
-            //Y.log("dateToLocalOffset:" + offset + "px", "info", "Y.DP.Timeline");
             
             return offset;            
         },
@@ -656,7 +1028,6 @@
          * @private
          */
         slotToOffset : function(slot) {
-            //Y.log("slotToOffset", "info", "Y.DP.Timeline");
             
             return slot * (this.get('eventHeight')) + slot * this.get('gutter');
         },
@@ -671,7 +1042,6 @@
          * @private
          */
         isDatePublicHoliday : function(d) {
-            //Y.log("isDatePublicHoliday", "info", "Y.DP.Timeline");
             
             if (d.getDay() === 0 || d.getDay() === 6) {
                 return true;
@@ -878,3 +1248,6 @@
     });
             
 //}, '@VERSION@' ,{requires:['base']});
+
+
+}, '@VERSION@' ,{requires:['base', 'widget', 'widget-parent', 'widget-child', 'widget-position', 'substitute', 'node', 'datatype', 'dd-drag', 'dd-constrain']});
