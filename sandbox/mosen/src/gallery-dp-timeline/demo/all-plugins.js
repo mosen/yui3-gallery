@@ -12,6 +12,9 @@ YUI({
             date: new Date(),
             children : [
                 {start: '2011-03-29', finish: '2011-04-03', summary: 'Project A', category: 'leave'},
+                {start: '2011-03-20', finish: '2011-04-03', summary: 'Project A', category: 'leave'},
+                {start: '2011-03-19', finish: '2011-03-23', summary: 'Project A', category: 'leave'},
+                {start: '2011-03-01', finish: '2011-04-03', summary: 'Project A', category: 'leave'},
                 {start: '2011-04-01', finish: '2011-04-01', summary: 'Project B', category: 'sku'},
                 {start: '2011-04-01', finish: '2011-04-10', summary: 'Project C', category: 'booked'},
                 {start: '2011-04-15', finish: '2011-04-17', summary: 'Project D', category: 'booked'}
@@ -20,6 +23,22 @@ YUI({
         });
         
         dptimeline.render('#gallery-dp-timeline');
+
+        var dptimelinesync = new Y.DP.Timeline({
+            date: new Date(),
+            children : [
+                {start: '2011-03-29', finish: '2011-04-03', summary: 'Project A', category: 'leave'},
+                {start: '2011-03-20', finish: '2011-04-03', summary: 'Project A', category: 'leave'},
+                {start: '2011-03-19', finish: '2011-03-23', summary: 'Project A', category: 'leave'},
+                {start: '2011-03-01', finish: '2011-04-03', summary: 'Project A', category: 'leave'},
+                {start: '2011-04-01', finish: '2011-04-01', summary: 'Project B', category: 'sku'},
+                {start: '2011-04-01', finish: '2011-04-10', summary: 'Project C', category: 'booked'},
+                {start: '2011-04-15', finish: '2011-04-17', summary: 'Project D', category: 'booked'}
+            ],
+            plugins: [Y.DP.TimelineHeadings]
+        });
+
+        dptimelinesync.render('#gallery-dp-timeline-synced');
 
         var ol = new Y.Overlay({
             contentBox: '#editor',

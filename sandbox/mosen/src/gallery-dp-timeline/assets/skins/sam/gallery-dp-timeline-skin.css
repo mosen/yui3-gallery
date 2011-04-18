@@ -13,14 +13,14 @@
     border-style: solid;
     border-width: 1px;
     border-color: #2ea4c5 #0074a5 #0074a5 #2ea4c5;
-    border-radius: 2px 0px 2px 0px;
+    border-radius: 4px 4px 4px 4px;
 
    /* background-color: #0e84b5; */
     background-image: url('./images/dp-timeline-bg.png');
     background-repeat: repeat-x;
     
-    box-shadow: 2px 2px 2px #888;
-    -webkit-box-shadow: 2px 2px 2px #888;
+    box-shadow: 2px 2px 2px #AAA;
+    -webkit-box-shadow: 2px 2px 2px #AAA;
     color: #EEEEEE;
 }
 

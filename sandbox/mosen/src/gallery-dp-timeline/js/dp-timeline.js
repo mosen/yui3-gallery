@@ -113,12 +113,14 @@
                 constrain: 'view',
                 stickX: true
             }).plug(Y.DP.LoopingDrag, {
-                offset: 100
+                leftOffset: 700,
+                rightOffset: 100,
+                width: 600
             });
             
-            Y.log(this._ddNodeBackgroundContainer.loopingDrag);
+            //Y.log(this._ddNodeBackgroundContainer.loopingDrag);
             
-            this._ddNodeBackgroundContainer.after("viewLoop", this._onViewLoop());
+            this._ddNodeBackgroundContainer.loopingDrag.after("viewLoop", this._onViewLoop, this);
             
             //this._ddNodeBackgroundContainer.on("drag:align", this._onBackgroundDrag, this);
                           
@@ -373,10 +375,19 @@
          * looping element is re-centered.
          * 
          * @method _onViewLoop
+         * @param e {Event} Event facade
          * @private
          */
-        _onViewLoop : function() {
+        _onViewLoop : function(e) {
             Y.log("onViewLoop", "info", "Y.DP.Timeline");
+            
+            var loopSizeDays = 6;
+            
+            e.edge == 'rightedge' ? loopSizeDays = loopSizeDays * -1 : loopSizeDays;
+            
+            var adjustedDate = Y.DP.TimelineUtil.addDays(this.get('date'), loopSizeDays);
+            Y.log("adjusted date via drag:" + adjustedDate, "info", "Y.DP.Timeline");
+            this.set('date', adjustedDate);
         },
         
         /**

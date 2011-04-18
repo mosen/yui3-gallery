@@ -144,7 +144,7 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
      * @private
      */
     _afterParentDateChange : function(e) {
-        Y.log("_afterParentDateChange", "info", "Y.DP.TimelineEvent");
+        //Y.log("_afterParentDateChange", "info", "Y.DP.TimelineEvent");
         
         var parent = this.get('parent'), 
             leftOffset = parent.dateToLocalOffset(this.get('start'));
