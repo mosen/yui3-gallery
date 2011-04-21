@@ -26,6 +26,7 @@ Y.namespace('DP').LoopingDrag = Y.Base.create( 'gallery-dp-dd-plugin-loopingdrag
         this.afterHostEvent('drag:drag', Y.bind(this.drag, this));
 
         this.publish('viewLoop', { defaultFn: this._defViewLoop });
+
     },
 
     destructor : function() {
@@ -46,12 +47,11 @@ Y.namespace('DP').LoopingDrag = Y.Base.create( 'gallery-dp-dd-plugin-loopingdrag
             dragNodeXY = dragNode.getXY(),
             actXY = this.get('host').actXY,
             deltaXY = this.get('host').deltaXY,
-            quarterWidth = 125,
-            totalWidth = 500,
-            leftBound = 450,
-            rightBound = 10,
-            newActXY,
-            loopEdge = undefined;
+            totalWidth = this.get('width'),
+            leftBound = this.get('leftOffset'),
+            rightBound = this.get('rightOffset'),
+            newActXY;
+        
         
         
         
@@ -69,11 +69,11 @@ Y.namespace('DP').LoopingDrag = Y.Base.create( 'gallery-dp-dd-plugin-loopingdrag
  
             var loopAbs = newActXY[0] - this.get('loopedXY')[0];
 
-            if (loopAbs > 400) {
+            if (loopAbs > 100) {
                 this.fire('viewLoop', { edge: this.LOOP_LEFTEDGE });
             }
             
-            if (loopAbs < -200) {
+            if (loopAbs < -100) {
                 this.fire('viewLoop', { edge: this.LOOP_RIGHTEDGE });
             }
 
@@ -145,6 +145,16 @@ Y.namespace('DP').LoopingDrag = Y.Base.create( 'gallery-dp-dd-plugin-loopingdrag
         
         
         /**
+         * Width of the view loop used to calculate the absolute position when resetting.
+         *
+         * @attribute width
+         * @type Integer
+         */
+        width : {
+            value : null
+        },
+        
+        /**
          * The offset (from the left or right side of the draggable node), that will trigger the object
          * to loop back to its initial position.
          * 
@@ -152,6 +162,28 @@ Y.namespace('DP').LoopingDrag = Y.Base.create( 'gallery-dp-dd-plugin-loopingdrag
          * @type Integer
          */
         offset : {
+            value : null
+        },
+        
+        
+        /**
+         * The offset from the left side of the object that will trigger its absolute position to be reset.
+         *
+         * @attribute leftOffset
+         * @type Integer
+         */
+        leftOffset : {
+            value : null
+        },
+        
+        
+        /**
+         * The offset from the right side of the object that will trigger its absolute position to be reset.
+         *
+         * @attribute rightOffset
+         * @type Integer
+         */
+        rightOffset : {
             value : null
         },
         

@@ -525,10 +525,13 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
                 constrain: 'view',
                 stickX: true
             }).plug(Y.DP.LoopingDrag, {
-                offset: 100
+                leftOffset: 700,
+                rightOffset: 100,
+                width: 600
             });
             
-            this._ddNodeBackgroundContainer.loopingDrag.after("viewLoop", this._onViewLoop());
+            
+            this._ddNodeBackgroundContainer.loopingDrag.after("viewLoop", this._onViewLoop, this);
             
             //this._ddNodeBackgroundContainer.on("drag:align", this._onBackgroundDrag, this);
                           
@@ -767,9 +770,17 @@ Y.namespace('DP').TimelineEvent = Y.Base.create( 'gallery-dp-timeline-event', Y.
          * looping element is re-centered.
          * 
          * @method _onViewLoop
+         * @param e {Event} Event facade
          * @private
          */
-        _onViewLoop : function() {
+        _onViewLoop : function(e) {
+            
+            var loopSizeDays = 6;
+            
+            e.edge == 'rightedge' ? loopSizeDays = loopSizeDays * -1 : loopSizeDays;
+            
+            var adjustedDate = Y.DP.TimelineUtil.addDays(this.get('date'), loopSizeDays);
+            this.set('date', adjustedDate);
         },
         
         /**
