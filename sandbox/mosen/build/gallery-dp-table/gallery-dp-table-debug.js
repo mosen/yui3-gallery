@@ -31,7 +31,7 @@ Y.namespace('DP').CellRenderers = {
          * @param cellNode {Node} TD cell reference
          */
         niceDate : function(data, field, cellNode) {
-
+            Y.log("niceDate renderer", "info", "object");
                 var d = data[field];
 
                 if (Lang.isDate(d)) {
@@ -73,7 +73,7 @@ Y.namespace('DP').CellRenderers = {
                         options = Y.JSON.parse(optionsNode.get('innerHTML'));
 
                     cellNode.set('innerHTML', options[data[field]]);                          
-                }
+                };
         },
 
         /**
@@ -92,7 +92,7 @@ Y.namespace('DP').CellRenderers = {
                 var back = Y.substitute(BG_TEMPLATE, { bar: bar });
 
                 cellNode.append(Node.create(back));
-            }
+            };
         }
 
 };
@@ -109,29 +109,25 @@ Y.namespace('DP').CellRenderers = {
  * @requires widget, substitute, classnamemanager
  * @namespace Y.DP
  */
-var	Lang = Y.Lang,
-        Node = Y.Node;
+var Lang = Y.Lang,
+    Node = Y.Node;
 
 /**
  * Dynamic table class.
  *  
- * @class TableBase
+ * @class DP.Table
  * @extends Y.Widget
  */
-Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
+Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
 
         /**
          * Initializer, implemented for Y.Base
          * 
          * @method initializer
-         * @param config {Object} Configuration object.
          */
-        initializer : function(config) {
+        initializer : function() {
 
-                Y.log('initializer', 'info', 'dp-table-body');
-
-                // Node references
-                this._tbodyNode = this.get('contentBox'); //config.tbodyNode;
+                Y.log('initializer', 'info', 'dp-table');
 
                 // IO
                 this.publish('success', {defaultFn: this._defResponseSuccessFn});
@@ -159,7 +155,8 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                 this._tbodyNode.detach('mouseenter');
                 this._tbodyNode.detach('mouseleave');
 
-                this._tbodyNode = null;	
+                this._tbodyNode = null;
+                this._tableNode = null;
         },
 
         // Y.Widget Rendering Lifecycle
@@ -167,8 +164,18 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
         /**
          * @see Widget.renderUI
          */
-        renderUI : function() { 
-                this.load(""); // Just load the dataset without any query parameters
+        renderUI : function() {
+            this._tbodyNode = Node.create(Y.substitute(this.TBODY_TEMPLATE, {
+                className: this.getClassName('tbody')
+            }));
+            
+            this._tableNode = Node.create(Y.substitute(this.TABLE_TEMPLATE, {
+                className: this.getClassName('table')
+            }));
+            
+            this._tableNode.append(this._tbodyNode);
+            
+            this.get('contentBox').append(this._tableNode);
         },
 
         /**
@@ -191,7 +198,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @see Widget.syncUI
          */
         syncUI : function() {
-
+            this.load(""); // Just load the dataset without any query parameters
         },
 
         // PROTECTED VARIABLES
@@ -211,7 +218,14 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @type Node
          */
         _tbodyNode : null,
-
+        
+        /**
+         * Reference to the TABLE node.
+         *
+         * @property _tableNode
+         * @type Node
+         */
+        _tableNode : null,
 
         // PROTECTED METHODS
 
@@ -223,38 +237,40 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          */
         _renderTableRows : function() {
 
-
                 var data = this.get('data'),
-                    bodyNode = this._tbodyNode,
-                    zebraClass;
+                    zebraClass,
+                    cells = this.get('cells');
+                    
+                this._tbodyNode.set('content', '');    
 
                 if (data.results.length > 0) {
-                        bodyNode.setContent('');
 
                         for (var i=0; i < data.results.length; i++) {
                                 zebraClass = (i % 2) ? 'row' : 'row-alt';
 
-                                var trTemplate = Y.substitute(this.ROW_TEMPLATE, {
+                                var tr = Node.create(Y.substitute(this.ROW_TEMPLATE, {
                                         trClassName: this.getClassName(zebraClass)
-                                });
-                                var tr = Node.create(trTemplate);
-
-                                var cells = this.get('cells');
+                                }));
 
                                 for (var x=0; x < cells.length; x++) {
                                         var cell = cells[x],
                                             field = cell.field,
-                                            cellWidth = cell.width;
-
-                                        var td = Node.create(Y.substitute(this.CELL_TEMPLATE, {
+                                            cellWidth = cell.width,
+                                            td = Node.create(Y.substitute(this.CELL_TEMPLATE, {
                                                 tdClassName: this.getClassName('cell')
-                                        }));
+                                            }));
 
                                         // Use renderer if defined
                                         if (undefined === cell.renderer) {
                                                 td.setContent(data.results[i][field]);
                                         } else {
-                                                cell.renderer(data.results[i], field, td);
+                                                var cellContent = cell.renderer({
+                                                    value: data.results[i][field]
+                                                });
+                                                
+                                                if (cellContent !== undefined) {
+                                                    td.setContent(cellContent);
+                                                }
                                         }
 
                                         td.set('width', cellWidth);
@@ -264,11 +280,10 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
 
                                 // Previously we created an array of nodes, and then appended them in one call.
                                 // Apparently Node.append no longer supports arrays.
-                                bodyNode.append(tr);
+                                this._tbodyNode.append(tr);
                         }
                 } else {
-                        bodyNode.setContent('');
-                        bodyNode.append(Node.create(Y.substitute(this.ZEROROWS_TEMPLATE, {
+                        this._tbodyNode.append(Node.create(Y.substitute(this.ZEROROWS_TEMPLATE, {
                                 colspan: this.get('cells').length,
                                 message: this.get('strings.zerorows')
                         })));
@@ -279,13 +294,14 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * Load data from the provided Y.DataSource Instance
          * 
          * @method load
+         * @param requestString {String} String to be used with datasource's sendRequest method.
          * @public
          */
         load : function(requestString) {
 
                 var ds = this.get('dataSource');
 
-                ds.sendRequest({
+                this._io = ds.sendRequest({
                         request : requestString,
                         callback : this._ioHandlers
                 });	
@@ -316,7 +332,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @param e {Event} CustomEvent
          */
         handleParameterChange : function(e) {
-                Y.log('handleParameterChange', 'info', 'dp-table-body');
+                Y.log('handleParameterChange', 'info', 'dp-table');
 
                 var params = this.get('queryParameters');
                 params[e.type] = e.parameters;
@@ -330,7 +346,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @param o {Object} Response object
          */
         _defResponseSuccessFn : function(o) {
-                Y.log('_defResponseSuccessFn', 'info', 'dp-table-body');
+                Y.log('_defResponseSuccessFn', 'info', 'dp-table');
 
                 this.set('data', o.response);
                 this.set('loading', false);
@@ -343,7 +359,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @param e {Event} Event
          */
         _defLoadingFn : function(e) {
-                Y.log('_defLoadingFn', 'info', 'dp-table-body');
+                Y.log('_defLoadingFn', 'info', 'dp-table');
 
                 this.set('loading', true);
         },
@@ -355,7 +371,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @protected
          */
         _afterDataChange : function(e) {
-                Y.log('_afterDataChange', 'info', 'dp-table-body');
+                Y.log('_afterDataChange', 'info', 'dp-table');
 
                 this._renderTableRows();
         },
@@ -391,6 +407,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                         key;
 
                 // Iterate through sources
+                
                 for (source in params) {
                         for (key in params[source]) {
                                 if (params[source][key].length > 0) {
@@ -404,14 +421,6 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
 
                 this.load(requestString);
         },
-
-        /**
-         * Body section does not require a contentBox because the content is bounded by the TBODY node.
-         * 
-         * @property CONTENT_TEMPLATE
-         * @type String
-         */
-        CONTENT_TEMPLATE : null,
 
         /**
          * Row template for a status message, that spans the entire table.
@@ -435,7 +444,24 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @property CELL_TEMPLATE
          * @type String
          */
-        CELL_TEMPLATE : '<td class="{tdClassName}"></td>'
+        CELL_TEMPLATE : '<td class="{tdClassName}"></td>',
+        
+ 
+        /**
+         * Template for the table node
+         *
+         * @property TABLE_TEMPLATE
+         * @type String
+         */
+        TABLE_TEMPLATE : '<table class="{className}"></table>',
+ 
+        /**
+         * Template for the body section
+         *
+         * @attribute TBODY_TEMPLATE
+         * @type String
+         */
+        TBODY_TEMPLATE : '<tbody class="{className}"></tbody>'
 },{
         // static
 
@@ -450,7 +476,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @type String
          * @static
          */
-        NAME : "dp-table-body",
+        NAME : "dp-table",
 
         /**
          * Static property used to define the default attribute 
@@ -473,7 +499,8 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
 
                 /**
                  * Array of cells to render. 
-                 * Does not necessarily have a 1:1 relationship with DataSource fields.
+                 * Does not necessarily have a 1:1 relationship with DataSource fields, 
+                 * because there can be aggregate columns or columns unrelated to the data.
                  * 
                  * cells are specified in the format { field: "fieldname", renderer: fnCellRenderer }
                  */
@@ -482,14 +509,14 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                 },
 
                 /**
-                 * Active Y.DataSource instance, used to populate the 
+                 * Active Y.DataSource instance, used to populate the table
                  * 
                  * @attribute dataSource
                  * @default null
                  * @type Y.DataSource
                  */
                 dataSource : { 
-                        value: null 
+                        value: null
                 },
 
                 /**
@@ -500,7 +527,8 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                  * @type Array
                  */
                 data : {
-                        value: null
+                        value: null,
+                        validator: Lang.isArray
                 },
 
                 /**
@@ -527,46 +555,35 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                         value: Array(),
                         validator: Lang.isArray
                 }
-        },
-
-        HTML_PARSER : {
-                tbodyNode : '.yui3-dp-table-body'
         }
 });
 /**
- * @version 1.0.0
- */
-
-/**
- * DP Table Headers
- * @module gallery-dp-table-headers
- * @requires widget, substitute
- * @namespace Y.DP
- */
-var SORT_ASC = 'asc',
-    SORT_DESC = 'desc',
-    SORT_KEY = 'sortKey',
-    SORT_DIRECTION = 'sortDirection';
-
-/**
- * Table Column Headers
- * Progressive enhancement of TH elements to provide sorting functionality.
  *
- * @class TableHeaders
+ *
+ * @module Headers
+ * @requires
  */
-Y.namespace('DP').TableHeaders = Y.Base.create('dp-table-headers', Y.Widget, [], {
+
+/* Any frequently used shortcuts, strings and constants */
+var Lang = Y.Lang;
+
+/**
+ *
+ *
+ * @class Headers
+ * @extends Plugin
+ */
+Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plugin.Base, [], {
 
     /**
-     * Initializer, implemented for Y.Base
+     * Lifecycle : Initializer
      *
      * @method initializer
-     * @param config {Object} Configuration object.
+     * @param config {Object} Configuration object
+     * @protected
+     * @constructor
      */
-    initializer : function(config) {
-        Y.log('init', 'info', 'Y.DP.TableHeaders');
-
-        // we require the table as srcNode because it is the only valid element to wrap in divs
-        //this._theadNode = config.theadNode;
+    initializer : function (config) {
 
         // Sort is fired after a header click
         this.publish('sort', {defaultFn: this._defSortFn});
@@ -578,69 +595,112 @@ Y.namespace('DP').TableHeaders = Y.Base.create('dp-table-headers', Y.Widget, [],
         // All subjects of table must publish this to affect the request parameters.
         // Fired when the column sorting changes
         this.publish('queryUpdate', {defaultFn: this._defQueryUpdateFn});
+
+        this.afterHostEvent('render', this.renderUI);
+        this.afterHostMethod('bindUI', this.bindUI);
     },
 
-    destructor : function() {
+    /**
+     * Lifecycle : Create the DOM structure for the headers.
+     *
+     * @method renderUI
+     * @protected
+     */
+    renderUI : function () {
+        this._renderTableHead();
+        this._renderTableHeadColumns();
+    },
+
+
+    /**
+     * Lifecycle : Bind event handlers to the DOM and for CustomEvents
+     *
+     * @method bindUI
+     * @protected
+     */
+    bindUI : function () {
+
+        // re-render columns after a change in sorting.
+        this.after('columnsChange', this._afterColumnsChange);
+
+        // DOM EVENTS
+        // 
+        // Stop accidental selection of header text.
+        this._theadNode.delegate('selectstart', function(e) {
+                e.preventDefault();
+        }, 'th', this);
+
+        // sort on header click
+        this._theadNode.delegate('click', function(e) {
+                this.fire('sort', {headerTarget: e.currentTarget});
+        }, 'th', this);
+
+        // Column header mouse hover events.
+        this._theadNode.delegate('mouseenter', function(e) {
+                this.fire('columnover', {headerTarget: e.currentTarget});
+        }, 'th', this);
+
+        this._theadNode.delegate('mouseleave', function(e) {
+                this.fire('columnout', {headerTarget: e.currentTarget});
+        }, 'th', this);
+    },
+    
+    /**
+     * Lifecycle : Synchronize the model to the DOM
+     *
+     * @method syncUI
+     */
+    syncUI : function () {
+        
+    },
+
+    /**
+     * Destructor lifecycle implementation for the headers class.
+     *
+     * @method destructor
+     * @protected
+     */
+    destructor: function() { 
+        
+        this._theadNode.detach('selectstart');
         this._theadNode.detach('click');
         this._theadNode.detach('mouseenter');
         this._theadNode.detach('mouseleave');
 
         this._theadNode = null;
+
     },
-
-    // @see Widget.renderUI
-    renderUI : function() {
-            this._renderTableColumns();
-    },
-
-    // @see Widget.bindUI
-    bindUI : function() {
-            var theadNode = this.get('theadNode');
-
-            // re-render columns after a change in sorting.
-            this.after('columnsChange', this._afterColumnsChange);
-
-            // DOM EVENTS
-            // 
-            // Stop accidental selection of header text.
-            theadNode.delegate('selectstart', function(e) {
-                    e.preventDefault();
-            }, 'th', this);
-
-            // sort on header click
-            theadNode.delegate('click', function(e) {
-                    this.fire('sort', {headerTarget: e.currentTarget});
-            }, 'th', this);
-
-            // Column header mouse hover events.
-            theadNode.delegate('mouseenter', function(e) {
-                    this.fire('columnover', {headerTarget: e.currentTarget});
-            }, 'th', this);
-
-            theadNode.delegate('mouseleave', function(e) {
-                    this.fire('columnout', {headerTarget: e.currentTarget});
-            }, 'th', this);
-    },
-
-    // @see Widget.syncUI
-    syncUI : function() {
+    
+    /**
+     * Render the THEAD node for this plugin
+     *
+     * @method _renderTableHead
+     * @private
+     */
+    _renderTableHead : function() {
+        Y.log("_renderTableHead", "info", "Y.DP.TableHeaders");
+        this._theadNode = Node.create(Y.substitute(this.THEAD_TEMPLATE, {
+            className : this.get('host').getClassName('tableHeaders', 'thead')
+        }));
         
+        this.get('host').append(this._theadNode);
     },
-
+    
     /**
      * Enhance table columns with styling and sorting
      *
-     * @method _renderTableColumns
+     * @method _renderTableHeadColumns
      * @protected
      */
-    _renderTableColumns : function() {
+    _renderTableHeadColumns : function() {
+        /*
         var columns = this.get('columns');
 
         for (var c=0; c < columns.length; c++) {
             var cnode = columns[c].node;
 
             var label = Y.Node.create(Y.substitute(this.COLUMN_LABEL_TEMPLATE, {
-                className: this.getClassName('label'),
+                className: this.get('host').getClassName('label'),
                 label: cnode.get('innerHTML')
             }));
 
@@ -658,152 +718,44 @@ Y.namespace('DP').TableHeaders = Y.Base.create('dp-table-headers', Y.Widget, [],
             }
 
             cnode.append(columns[c].sortNode);
-        }
+        }*/
+        
     },
 
+    
     /**
-     * Default handler for table:sort
+     * Reference to the THEAD element in the table
      *
-     * @method _defSortFn
-     * @param e {Event}
-     */
-    _defSortFn : function(e) {
-            Y.log('_defSortFn', 'info', 'Y.DP.TableHeaders');
-
-            this.sort(e.headerTarget);
-    },
-
-    /**
-     * Default handler for CustomEvent queryUpdate
-     *
-     * @method _defQueryUpdateFn
-     * @param e {Event}
-     */
-    _defQueryUpdateFn : function(e) {
-            Y.log('gallery-dp-table-headers:_defQueryUpdateFn');
-    },
-
-    /**
-     * Default handler for column mouseenter
-     *
-     * @method _uiSetColumnOver
-     * @param e {Event}
-     */
-    _uiSetColumnOver : function(e) {
-            var node = e.headerTarget;
-
-            if (!node.hasClass(this.getClassName('column', 'over'))) {
-                    node.addClass(this.getClassName('column', 'over'));
-            }
-    },
-
-    /**
-     * Default handler for column mouseexit
-     *
-     * @method _uiSetColumnOut
-     * @param e {Event}
-     */
-    _uiSetColumnOut : function(e) {
-            var node = e.headerTarget;
-
-            if (node.hasClass(this.getClassName('column', 'over'))) {
-                    node.removeClass(this.getClassName('column', 'over'));
-            }
-    },
-
-    /**
-     * Sort a column in the specified direction.
-     *
-     * No specified direction will alternate the sort direction.
-     * This is usually called by TableHeaders._defSortFn after a custom "sort" event.
-     *
-     * @method sort
-     * @public
-     * @param node {Node} TH node to change sort direction for.
-     * @param direction SORT_ASC | SORT_DESC [optional] sorting direction.
-     */
-    sort : function(node, direction) {
-            Y.log('gallery-dp-table-headers:sort');
-
-            var columns = this.get('columns');
-
-            for (var c=0; c < columns.length; c++) {
-                    if (columns[c].node == node) {
-                            // Sort inverse
-                            switch (columns[c].sort) {
-                                    case SORT_ASC:
-                                            columns[c].sort = (undefined === direction) ? SORT_DESC : direction;
-                                            break;
-                                    case SORT_DESC:
-                                            columns[c].sort = (undefined === direction) ? '' : direction;
-                                            break;
-                                    default:
-                                            columns[c].sort = (undefined === direction) ? SORT_ASC : direction;
-                            }
-
-                            Y.log('Sorting ' + columns[c].title);
-                            break;
-                    }
-            }
-
-            this.set('columns', columns);
-    },
-
-    /**
-     * Handle a change in the columns attribute
-     * Causes columns to be re-rendered.
-     *
-     * @method _afterColumnsChange
+     * @property _theadNode
+     * @type Node
      * @protected
      */
-    _afterColumnsChange : function(e) {
-            Y.log('gallery-dp-table-headers:_afterColumnsChange');
-
-            var columns = this.get('columns'),
-                    queryParameters = Array();
-
-            for (var c=0; c < columns.length; c++) {
-                    var col = columns[c];
-
-                    queryParameters['sort[' + col.key + ']'] = col.sort;
-
-                    // Column sorting switches between ascending, descending and none
-                    switch (col.sort) {
-                            case SORT_ASC:
-                                    Y.log('Adding sort ASCENDING to ' + col.title);
-
-                                    if (col.sortNode.hasClass(this.getClassName('sort','desc'))) {
-                                            col.sortNode.removeClass(this.getClassName('sort','desc'));
-                                    }
-
-                                    col.sortNode.addClass(this.getClassName('sort','asc'));
-
-                                    break;
-                            case SORT_DESC:
-                                    Y.log('Adding sort DESCENDING to ' + col.title);
-
-                                    if (col.sortNode.hasClass(this.getClassName('sort','asc'))) {
-                                            col.sortNode.removeClass(this.getClassName('sort','asc'));
-                                    }
-
-                                    col.sortNode.addClass(this.getClassName('sort','desc'));
-                                    break;
-                            default:
-                                    Y.log('Removing sort from ' + col.title);
-
-                                    if (col.sortNode.hasClass(this.getClassName('sort','desc'))) {
-                                            col.sortNode.removeClass(this.getClassName('sort','desc'));
-                                    }
-
-                                    if (col.sortNode.hasClass(this.getClassName('sort','asc'))) {
-                                            col.sortNode.removeClass(this.getClassName('sort','asc'));
-                                    }
-                    }
-            }
-
-            this.fire('queryUpdate', {parameters : queryParameters});
-    },
-
+    _theadNode : null,
+    
+    /**
+     * Template used to render the table header node.
+     *
+     * @property THEAD_TEMPLATE
+     * @type String
+     */
+    THEAD_TEMPLATE : '<thead class="{className}"></thead>',
+    
+    /**
+     * Template used to render the row for headings
+     *
+     * @property ROW_TEMPLATE
+     * @type String
+     */
+    ROW_TEMPLATE : '<tr class="{className}"></tr>',
+    
+    /**
+     * Template used to render each of the headings in the head node.
+     *
+     * @property COLUMN_TEMPLATE
+     * @type String
+     */
+    COLUMN_TEMPLATE : '<th class="{className}">{value}</th>',
+    
     /**
      * Contains the sort indicator graphic
      *
@@ -820,88 +772,39 @@ Y.namespace('DP').TableHeaders = Y.Base.create('dp-table-headers', Y.Widget, [],
      * @type String
      * @static
      */
-    COLUMN_LABEL_TEMPLATE : '<span class="{className}">{label}</span>',
+    COLUMN_LABEL_TEMPLATE : '<span class="{className}">{label}</span>'
+    
+    
+// Use NetBeans Code template "ymethod" to add methods here
+
+}, {
 
     /**
-     * No content template because this is encompassed by a table tag.
+     * The plugin namespace
      *
-     * @property CONTENT_TEMPLATE
+     * @property Headers.NS
+     * @type String
+     * @protected
      * @static
      */
-    CONTENT_TEMPLATE : null
-    
-}, {
-    
-    NAME : "dp-table-headers",
+    NS : "tableHeaders",
 
+
+    /**
+     * Static property used to define the default attribute configuration of
+     * the Widget.
+     *
+     * @property Headers.ATTRS
+     * @type Object
+     * @protected
+     * @static
+     */
     ATTRS : {
-
-            /**
-             * Reference to the table head element
-             * 
-             * @attribute theadNode
-             * @default null
-             * @type Node
-             */
-            theadNode : {
-                value: null
-            },
-            
-            /**
-             * Reference to the table row element containing the column headers
-             *
-             * @attribute columnsNode
-             * @default null
-             * @type Node
-             */
-            columnsNode : {
-                    value : null
-            },
-
-            /**
-             * Array of objects representing columns with keys for title and width
-             * This will be refactored into a columns object.
-             *
-             * @attribute columns
-             * @default Empty array
-             * @type Array
-             */
-            columns : {
-                    value : Array()
-            }
-    },
-
-    HTML_PARSER : {
         
-            // Reference to the thead node which will become our contentBox
-            theadNode : 'thead.yui3-gallery-dp-table-headers',
-            
-            // Reference to the row holding the <TH> nodes, aka column headers.
-            columnsNode : 'tr.yui3-gallery-dp-table-headers-columns',
+// Use NetBeans Code Template "yattr" to add attributes here
+}
+        
 
-            /**
-             * Parse table column headers (TH) into a columns array.
-             *
-             * @param srcNode {Node}
-             */
-            columns : function(srcNode) {
-                    var cols = Array(),
-                            ths = srcNode.one('.yui3-dp-table-headers-columns').all('.yui3-dp-table-headers-column');
-
-                    ths.each(function(th) {
-                            cols.push({
-                                    title: th.get('innerHTML'),
-                                    width: th.get('width'),
-                                    key: th.getAttribute(SORT_KEY),
-                                    sort: th.getAttribute(SORT_DIRECTION),
-                                    node: th
-                            });
-                    }, this);
-
-                    Y.log(cols);
-                    return cols;
-            }
-    }
 });
 
 

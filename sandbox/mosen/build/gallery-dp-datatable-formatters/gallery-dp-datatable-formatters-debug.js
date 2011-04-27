@@ -56,6 +56,8 @@ Y.namespace('DP').DataTableFormatters = {
      */
     getDateFormatter: function(formatString) {
         return function(o) {
+            console.dir(o);
+            
             var d;
             
             if (Y.Lang.isDate(o.value)) {

@@ -1,4 +1,4 @@
-YUI().use('datasource', 'gallery-dp-datatype', 'gallery-dp-table', function(Y) {
+YUI({ lang: 'en-AU' }).use('datasource',  'gallery-dp-datatype', 'gallery-dp-datatable-formatters', 'gallery-dp-table', function(Y) {
 
     /**
      * Render a project name cell, with link to project.
@@ -38,8 +38,8 @@ YUI().use('datasource', 'gallery-dp-datatype', 'gallery-dp-table', function(Y) {
                 resultListLocator : "results",
                 resultFields : [
                     // DP.DataType.DateTime Was created to natively parse MySQL ISO8601 DateTimes
-                    { key:"finish", parser:Y.DP.DataType.DateTime.parse }, 
-                    { key:"start", parser:Y.DP.DataType.DateTime.parse },
+                    { key:"finish" }, 
+                    { key:"start" },
                     "progress",
                     "name",
                     "id"
@@ -52,7 +52,7 @@ YUI().use('datasource', 'gallery-dp-datatype', 'gallery-dp-table', function(Y) {
 
         /*
         
-            var tbl = new Y.DP.TableBody({ 
+            var tbl = new Y.DP.Table({ 
             srcNode : '.yui3-dp-table',
             boundingBox : '.yui3-dp-table-body',
             dataSource : myDataSource,
@@ -65,11 +65,20 @@ YUI().use('datasource', 'gallery-dp-datatype', 'gallery-dp-table', function(Y) {
         });
         */
 
-        var thead = new Y.DP.TableHeaders({ srcNode: '.yui3-gallery-dp-table-headers' });
+        var thead = new Y.DP.Table({
+             cells : [
+                 { field: "name", width: '150em' },
+                 { field: "start", renderer: Y.DP.DataTableFormatters.getDateFormatter(), width: '15em' },
+                 { field: "finish", renderer: Y.DP.DataTableFormatters.getDateFormatter(), width: '15em' },
+                 { field: "progress", width: '20em' }
+            ],
+            dataSource: myDataSource,
+            plugins: [
+                { fn: Y.DP.TableHeaders, config: { columns: [] }}
+            ]
+        });
         //thead.on('queryUpdate', tbl.handleParameterChange, tbl);
-        thead.render();
-
-        //tbl.render();
+        thead.render('#table-demo');
 
     }
 

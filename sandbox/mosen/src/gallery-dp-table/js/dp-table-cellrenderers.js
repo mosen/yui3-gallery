@@ -29,7 +29,7 @@ Y.namespace('DP').CellRenderers = {
          * @param cellNode {Node} TD cell reference
          */
         niceDate : function(data, field, cellNode) {
-
+            Y.log("niceDate renderer", "info", "object");
                 var d = data[field];
 
                 if (Lang.isDate(d)) {
@@ -71,7 +71,7 @@ Y.namespace('DP').CellRenderers = {
                         options = Y.JSON.parse(optionsNode.get('innerHTML'));
 
                     cellNode.set('innerHTML', options[data[field]]);                          
-                }
+                };
         },
 
         /**
@@ -90,7 +90,7 @@ Y.namespace('DP').CellRenderers = {
                 var back = Y.substitute(BG_TEMPLATE, { bar: bar });
 
                 cellNode.append(Node.create(back));
-            }
+            };
         }
 
 };

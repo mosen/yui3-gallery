@@ -18,7 +18,7 @@ var	Lang = Y.Lang,
  * @class TableBase
  * @extends Y.Widget
  */
-Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
+Y.namespace('DP').Table = Y.Base.create('dp-table-body', Y.Widget, [], {
 
         /**
          * Initializer, implemented for Y.Base

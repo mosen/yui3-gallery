@@ -9,29 +9,25 @@
  * @requires widget, substitute, classnamemanager
  * @namespace Y.DP
  */
-var	Lang = Y.Lang,
-        Node = Y.Node;
+var Lang = Y.Lang,
+    Node = Y.Node;
 
 /**
  * Dynamic table class.
  *  
- * @class TableBase
+ * @class DP.Table
  * @extends Y.Widget
  */
-Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
+Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
 
         /**
          * Initializer, implemented for Y.Base
          * 
          * @method initializer
-         * @param config {Object} Configuration object.
          */
-        initializer : function(config) {
+        initializer : function() {
 
-                Y.log('initializer', 'info', 'dp-table-body');
-
-                // Node references
-                this._tbodyNode = this.get('contentBox'); //config.tbodyNode;
+                Y.log('initializer', 'info', 'dp-table');
 
                 // IO
                 this.publish('success', {defaultFn: this._defResponseSuccessFn});
@@ -59,7 +55,8 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                 this._tbodyNode.detach('mouseenter');
                 this._tbodyNode.detach('mouseleave');
 
-                this._tbodyNode = null;	
+                this._tbodyNode = null;
+                this._tableNode = null;
         },
 
         // Y.Widget Rendering Lifecycle
@@ -67,8 +64,18 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
         /**
          * @see Widget.renderUI
          */
-        renderUI : function() { 
-                this.load(""); // Just load the dataset without any query parameters
+        renderUI : function() {
+            this._tbodyNode = Node.create(Y.substitute(this.TBODY_TEMPLATE, {
+                className: this.getClassName('tbody')
+            }));
+            
+            this._tableNode = Node.create(Y.substitute(this.TABLE_TEMPLATE, {
+                className: this.getClassName('table')
+            }));
+            
+            this._tableNode.append(this._tbodyNode);
+            
+            this.get('contentBox').append(this._tableNode);
         },
 
         /**
@@ -91,7 +98,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @see Widget.syncUI
          */
         syncUI : function() {
-
+            this.load(""); // Just load the dataset without any query parameters
         },
 
         // PROTECTED VARIABLES
@@ -111,7 +118,14 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @type Node
          */
         _tbodyNode : null,
-
+        
+        /**
+         * Reference to the TABLE node.
+         *
+         * @property _tableNode
+         * @type Node
+         */
+        _tableNode : null,
 
         // PROTECTED METHODS
 
@@ -123,38 +137,40 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          */
         _renderTableRows : function() {
 
-
                 var data = this.get('data'),
-                    bodyNode = this._tbodyNode,
-                    zebraClass;
+                    zebraClass,
+                    cells = this.get('cells');
+                    
+                this._tbodyNode.set('content', '');    
 
                 if (data.results.length > 0) {
-                        bodyNode.setContent('');
 
                         for (var i=0; i < data.results.length; i++) {
                                 zebraClass = (i % 2) ? 'row' : 'row-alt';
 
-                                var trTemplate = Y.substitute(this.ROW_TEMPLATE, {
+                                var tr = Node.create(Y.substitute(this.ROW_TEMPLATE, {
                                         trClassName: this.getClassName(zebraClass)
-                                });
-                                var tr = Node.create(trTemplate);
-
-                                var cells = this.get('cells');
+                                }));
 
                                 for (var x=0; x < cells.length; x++) {
                                         var cell = cells[x],
                                             field = cell.field,
-                                            cellWidth = cell.width;
-
-                                        var td = Node.create(Y.substitute(this.CELL_TEMPLATE, {
+                                            cellWidth = cell.width,
+                                            td = Node.create(Y.substitute(this.CELL_TEMPLATE, {
                                                 tdClassName: this.getClassName('cell')
-                                        }));
+                                            }));
 
                                         // Use renderer if defined
                                         if (undefined === cell.renderer) {
                                                 td.setContent(data.results[i][field]);
                                         } else {
-                                                cell.renderer(data.results[i], field, td);
+                                                var cellContent = cell.renderer({
+                                                    value: data.results[i][field]
+                                                });
+                                                
+                                                if (cellContent !== undefined) {
+                                                    td.setContent(cellContent);
+                                                }
                                         }
 
                                         td.set('width', cellWidth);
@@ -164,11 +180,10 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
 
                                 // Previously we created an array of nodes, and then appended them in one call.
                                 // Apparently Node.append no longer supports arrays.
-                                bodyNode.append(tr);
+                                this._tbodyNode.append(tr);
                         }
                 } else {
-                        bodyNode.setContent('');
-                        bodyNode.append(Node.create(Y.substitute(this.ZEROROWS_TEMPLATE, {
+                        this._tbodyNode.append(Node.create(Y.substitute(this.ZEROROWS_TEMPLATE, {
                                 colspan: this.get('cells').length,
                                 message: this.get('strings.zerorows')
                         })));
@@ -179,13 +194,14 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * Load data from the provided Y.DataSource Instance
          * 
          * @method load
+         * @param requestString {String} String to be used with datasource's sendRequest method.
          * @public
          */
         load : function(requestString) {
 
                 var ds = this.get('dataSource');
 
-                ds.sendRequest({
+                this._io = ds.sendRequest({
                         request : requestString,
                         callback : this._ioHandlers
                 });	
@@ -216,7 +232,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @param e {Event} CustomEvent
          */
         handleParameterChange : function(e) {
-                Y.log('handleParameterChange', 'info', 'dp-table-body');
+                Y.log('handleParameterChange', 'info', 'dp-table');
 
                 var params = this.get('queryParameters');
                 params[e.type] = e.parameters;
@@ -230,7 +246,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @param o {Object} Response object
          */
         _defResponseSuccessFn : function(o) {
-                Y.log('_defResponseSuccessFn', 'info', 'dp-table-body');
+                Y.log('_defResponseSuccessFn', 'info', 'dp-table');
 
                 this.set('data', o.response);
                 this.set('loading', false);
@@ -243,7 +259,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @param e {Event} Event
          */
         _defLoadingFn : function(e) {
-                Y.log('_defLoadingFn', 'info', 'dp-table-body');
+                Y.log('_defLoadingFn', 'info', 'dp-table');
 
                 this.set('loading', true);
         },
@@ -255,7 +271,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @protected
          */
         _afterDataChange : function(e) {
-                Y.log('_afterDataChange', 'info', 'dp-table-body');
+                Y.log('_afterDataChange', 'info', 'dp-table');
 
                 this._renderTableRows();
         },
@@ -291,6 +307,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                         key;
 
                 // Iterate through sources
+                
                 for (source in params) {
                         for (key in params[source]) {
                                 if (params[source][key].length > 0) {
@@ -304,14 +321,6 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
 
                 this.load(requestString);
         },
-
-        /**
-         * Body section does not require a contentBox because the content is bounded by the TBODY node.
-         * 
-         * @property CONTENT_TEMPLATE
-         * @type String
-         */
-        CONTENT_TEMPLATE : null,
 
         /**
          * Row template for a status message, that spans the entire table.
@@ -335,7 +344,24 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @property CELL_TEMPLATE
          * @type String
          */
-        CELL_TEMPLATE : '<td class="{tdClassName}"></td>'
+        CELL_TEMPLATE : '<td class="{tdClassName}"></td>',
+        
+ 
+        /**
+         * Template for the table node
+         *
+         * @property TABLE_TEMPLATE
+         * @type String
+         */
+        TABLE_TEMPLATE : '<table class="{className}"></table>',
+ 
+        /**
+         * Template for the body section
+         *
+         * @attribute TBODY_TEMPLATE
+         * @type String
+         */
+        TBODY_TEMPLATE : '<tbody class="{className}"></tbody>'
 },{
         // static
 
@@ -350,7 +376,7 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
          * @type String
          * @static
          */
-        NAME : "dp-table-body",
+        NAME : "dp-table",
 
         /**
          * Static property used to define the default attribute 
@@ -373,7 +399,8 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
 
                 /**
                  * Array of cells to render. 
-                 * Does not necessarily have a 1:1 relationship with DataSource fields.
+                 * Does not necessarily have a 1:1 relationship with DataSource fields, 
+                 * because there can be aggregate columns or columns unrelated to the data.
                  * 
                  * cells are specified in the format { field: "fieldname", renderer: fnCellRenderer }
                  */
@@ -382,14 +409,14 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                 },
 
                 /**
-                 * Active Y.DataSource instance, used to populate the 
+                 * Active Y.DataSource instance, used to populate the table
                  * 
                  * @attribute dataSource
                  * @default null
                  * @type Y.DataSource
                  */
                 dataSource : { 
-                        value: null 
+                        value: null
                 },
 
                 /**
@@ -400,7 +427,8 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                  * @type Array
                  */
                 data : {
-                        value: null
+                        value: null,
+                        validator: Lang.isArray
                 },
 
                 /**
@@ -427,9 +455,5 @@ Y.namespace('DP').TableBody = Y.Base.create('dp-table-body', Y.Widget, [], {
                         value: Array(),
                         validator: Lang.isArray
                 }
-        },
-
-        HTML_PARSER : {
-                tbodyNode : '.yui3-dp-table-body'
         }
 });

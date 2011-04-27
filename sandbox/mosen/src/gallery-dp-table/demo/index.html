@@ -5,8 +5,10 @@
     <link href="../../../build/dp-table/assets/dp-table-core.css" media="screen" rel="stylesheet" type="text/css" >
     <script src="http://yui.yahooapis.com/3.3.0/build/yui/yui-min.js"
         charset="utf-8"></script>
-    <script type="text/javascript"
+       <script type="text/javascript"
             src="../../../build/gallery-dp-datatype/gallery-dp-datatype-debug.js"></script>
+    <script type="text/javascript"
+            src="../../../build/gallery-dp-datatable-formatters/gallery-dp-datatable-formatters-debug.js"></script>
     <script type="text/javascript"
             src="../../../build/gallery-dp-table/gallery-dp-table-debug.js"></script>
     <script type="text/javascript" src="index.js"></script>
@@ -20,19 +22,7 @@
         (meaning that you can interpret the cell contents however you like).
     </p>
 
-    <div id="projects-list-content">
-            <table class="yui3-dp-table">
-                    <thead class="yui3-gallery-dp-table-headers yui3-widget-loading">
-                            <tr class="yui3-dp-table-headers-columns">
-                                    <th class="yui3-dp-table-headers-column" sortKey="name" width="500px">Name</th>
-                                    <th class="yui3-dp-table-headers-column" sortKey="start" width="100px">Start</th>
-                                    <th class="yui3-dp-table-headers-column" sortKey="finish" width="100px">Finish</th>
-                                    <th class="yui3-dp-table-headers-column" sortKey="progress" width="200px">Progress</th>
-                            </tr>
-                    </thead>
-                    <tbody class="yui3-dp-table-body yui3-dp-table-body-loading"></tbody>
-            </table>
-    </div>
-    <div id="projects-list"></div>
+
+    <div id="table-demo"></div>
 </body>
 </html>

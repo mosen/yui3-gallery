@@ -798,3 +798,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
 
 
 }, '@VERSION@' ,{requires:['substitute', 'json-parse', 'node', 'widget', 'datatype', 'dataschema', 'datasource', 'node-pluginhost']});
+
+
+YUI.add('gallery-dp-table', function(Y){}, '@VERSION@' ,{use:['dp-table'], skinnable:false});
+

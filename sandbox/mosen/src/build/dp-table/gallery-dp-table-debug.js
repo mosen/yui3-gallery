@@ -31,6 +31,7 @@ Y.namespace('DP').CellRenderers = {
          * @param cellNode {Node} TD cell reference
          */
         niceDate : function(data, field, cellNode) {
+            Y.log("niceDate renderer", "info", "object");
                 var d = data[field];
 
                 if (Lang.isDate(d)) {
@@ -126,6 +127,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
          */
         initializer : function() {
 
+                Y.log('initializer', 'info', 'dp-table');
 
                 // IO
                 this.publish('success', {defaultFn: this._defResponseSuccessFn});
@@ -330,6 +332,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
          * @param e {Event} CustomEvent
          */
         handleParameterChange : function(e) {
+                Y.log('handleParameterChange', 'info', 'dp-table');
 
                 var params = this.get('queryParameters');
                 params[e.type] = e.parameters;
@@ -343,6 +346,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
          * @param o {Object} Response object
          */
         _defResponseSuccessFn : function(o) {
+                Y.log('_defResponseSuccessFn', 'info', 'dp-table');
 
                 this.set('data', o.response);
                 this.set('loading', false);
@@ -355,6 +359,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
          * @param e {Event} Event
          */
         _defLoadingFn : function(e) {
+                Y.log('_defLoadingFn', 'info', 'dp-table');
 
                 this.set('loading', true);
         },
@@ -366,6 +371,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
          * @protected
          */
         _afterDataChange : function(e) {
+                Y.log('_afterDataChange', 'info', 'dp-table');
 
                 this._renderTableRows();
         },
@@ -380,7 +386,9 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
         _afterLoadingChange : function(e) {
                 var loading = this.get('loading');
                 if (loading) {
+                        Y.log('loading');
                 } else {
+                        Y.log('finished loading');
                 }
         },
 
@@ -391,6 +399,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
          * @protected
          */
         _afterQueryParametersChange : function() {
+                Y.log('_afterQueryParametersChange');
 
                 var params = this.get('queryParameters'),
                         requestHash = Array(),
@@ -408,6 +417,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
                 }
 
                 var requestString = "?" + requestHash.join("&");
+                Y.log(requestString);
 
                 this.load(requestString);
         },
@@ -668,6 +678,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
      * @private
      */
     _renderTableHead : function() {
+        Y.log("_renderTableHead", "info", "Y.DP.TableHeaders");
         this._theadNode = Node.create(Y.substitute(this.THEAD_TEMPLATE, {
             className : this.get('host').getClassName('tableHeaders', 'thead')
         }));
@@ -798,3 +809,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
 
 
 }, '@VERSION@' ,{requires:['substitute', 'json-parse', 'node', 'widget', 'datatype', 'dataschema', 'datasource', 'node-pluginhost']});
+
+
+YUI.add('gallery-dp-table', function(Y){}, '@VERSION@' ,{use:['dp-table'], skinnable:false});
+
