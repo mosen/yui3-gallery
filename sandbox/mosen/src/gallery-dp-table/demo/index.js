@@ -1,4 +1,4 @@
-YUI({ lang: 'en-AU' }).use('datasource',  'gallery-dp-datatype', 'gallery-dp-datatable-formatters', 'gallery-dp-table', function(Y) {
+YUI({ lang: 'en-AU', filter: 'debug' }).use('datasource',  'gallery-dp-datatype', 'gallery-dp-datatable-formatters', 'gallery-dp-table', function(Y) {
 
     /**
      * Render a project name cell, with link to project.
@@ -74,7 +74,12 @@ YUI({ lang: 'en-AU' }).use('datasource',  'gallery-dp-datatype', 'gallery-dp-dat
             ],
             dataSource: myDataSource,
             plugins: [
-                { fn: Y.DP.TableHeaders, config: { columns: [] }}
+                { fn: Y.DP.TableHeaders, cfg: { columns: [
+                            { title: "Project", key:"name" },
+                            { title: "Start", key:"start" },
+                            { title: "Finish", key:"finish" },
+                            { title: "Progress", key:"progress" }
+                ] }}
             ]
         });
         //thead.on('queryUpdate', tbl.handleParameterChange, tbl);

@@ -182,6 +182,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
          * @see Widget.bindUI
          */
         bindUI : function() {
+                this.after('queryUpdate', this.handleParameterChange);
 
                 this._tbodyNode.delegate('selectstart', function(e) {
                     e.preventDefault();
@@ -527,8 +528,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
                  * @type Array
                  */
                 data : {
-                        value: null,
-                        validator: Lang.isArray
+                        value: null
                 },
 
                 /**
@@ -565,7 +565,9 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
  */
 
 /* Any frequently used shortcuts, strings and constants */
-var Lang = Y.Lang;
+var Lang = Y.Lang,
+    SORT_ASC = 'asc',
+    SORT_DESC = 'desc';
 
 /**
  *
@@ -594,10 +596,10 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
 
         // All subjects of table must publish this to affect the request parameters.
         // Fired when the column sorting changes
-        this.publish('queryUpdate', {defaultFn: this._defQueryUpdateFn});
+        this.publish('queryUpdate', {defaultFn: this._defQueryUpdateFn, bubbles: true});
 
-        this.afterHostEvent('render', this.renderUI);
-        this.afterHostMethod('bindUI', this.bindUI);
+        this.afterHostMethod('renderUI', this.renderUI, this);
+        this.afterHostMethod('bindUI', this.bindUI, this);
     },
 
     /**
@@ -672,6 +674,102 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
     },
     
     /**
+     * Sort a column in the specified direction.
+     *
+     * No specified direction will alternate the sort direction.
+     * This is usually called by TableHeaders._defSortFn after a custom "sort" event.
+     *
+     * @method sort
+     * @public
+     * @param node {Node} TH node to change sort direction for.
+     * @param direction SORT_ASC | SORT_DESC [optional] sorting direction.
+     */
+    sort : function(node, direction) {
+            Y.log("sort", "info", "Y.DP.TableHeaders");
+
+            var columns = this.get('columns');
+
+            for (var c=0; c < columns.length; c++) {
+                    if (columns[c].node == node) {
+                            // Sort inverse
+                            switch (columns[c].sort) {
+                                    case SORT_ASC:
+                                            columns[c].sort = (undefined === direction) ? SORT_DESC : direction;
+                                            break;
+                                    case SORT_DESC:
+                                            columns[c].sort = (undefined === direction) ? '' : direction;
+                                            break;
+                                    default:
+                                            columns[c].sort = (undefined === direction) ? SORT_ASC : direction;
+                            }
+
+                            Y.log('Sorting ' + columns[c].title);
+                            break;
+                    }
+            }
+
+            this.set('columns', columns);
+    },
+    
+    /**
+     * Handle a change in the columns attribute
+     * Causes columns to be re-rendered.
+     *
+     * @method _afterColumnsChange
+     * @param e {Event} Custom event facade
+     * @protected
+     */
+    _afterColumnsChange : function(e) {
+            Y.log('gallery-dp-table-headers:_afterColumnsChange');
+
+            var columns = this.get('columns'),
+                    queryParameters = Array();
+
+            for (var c=0; c < columns.length; c++) {
+                    var col = columns[c];
+
+                    queryParameters['sort[' + col.key + ']'] = col.sort;
+
+                    // Column sorting switches between ascending, descending and none
+                    switch (col.sort) {
+                            case SORT_ASC:
+                                    Y.log('Adding sort ASCENDING to ' + col.title);
+
+                                    if (col.sortNode.hasClass(this.get('host').getClassName('sort','desc'))) {
+                                            col.sortNode.removeClass(this.get('host').getClassName('sort','desc'));
+                                    }
+
+                                    col.sortNode.addClass(this.get('host').getClassName('sort','asc'));
+
+                                    break;
+                            case SORT_DESC:
+                                    Y.log('Adding sort DESCENDING to ' + col.title);
+
+                                    if (col.sortNode.hasClass(this.get('host').getClassName('sort','asc'))) {
+                                            col.sortNode.removeClass(this.get('host').getClassName('sort','asc'));
+                                    }
+
+                                    col.sortNode.addClass(this.get('host').getClassName('sort','desc'));
+                                    break;
+                            default:
+                                    Y.log('Removing sort from ' + col.title);
+
+                                    if (col.sortNode.hasClass(this.get('host').getClassName('sort','desc'))) {
+                                            col.sortNode.removeClass(this.get('host').getClassName('sort','desc'));
+                                    }
+
+                                    if (col.sortNode.hasClass(this.get('host').getClassName('sort','asc'))) {
+                                            col.sortNode.removeClass(this.get('host').getClassName('sort','asc'));
+                                    }
+                    }
+            }
+
+            // Host should listen for all queryUpdate events.
+            this.fire('queryUpdate', {parameters : queryParameters});
+    },
+    
+    
+    /**
      * Render the THEAD node for this plugin
      *
      * @method _renderTableHead
@@ -680,10 +778,10 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
     _renderTableHead : function() {
         Y.log("_renderTableHead", "info", "Y.DP.TableHeaders");
         this._theadNode = Node.create(Y.substitute(this.THEAD_TEMPLATE, {
-            className : this.get('host').getClassName('tableHeaders', 'thead')
+            className : this.get('host').getClassName('thead')
         }));
         
-        this.get('host').append(this._theadNode);
+        this.get('host')._tableNode.append(this._theadNode);
     },
     
     /**
@@ -693,34 +791,87 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
      * @protected
      */
     _renderTableHeadColumns : function() {
-        /*
-        var columns = this.get('columns');
+        
+        var columns = this.get('columns'),
+            columnNode;
 
         for (var c=0; c < columns.length; c++) {
-            var cnode = columns[c].node;
-
-            var label = Y.Node.create(Y.substitute(this.COLUMN_LABEL_TEMPLATE, {
-                className: this.get('host').getClassName('label'),
-                label: cnode.get('innerHTML')
+            
+            columns[c].node = Node.create(Y.substitute(this.COLUMN_TEMPLATE, {
+                className : this.get('host').getClassName('th'),
+                labelClassName : this.get('host').getClassName('th', 'label'),
+                label : columns[c].title || ''
             }));
-
-            cnode.setContent('');
-            cnode.append(label);
-
+            
             columns[c].sortNode = Node.create(Y.substitute(this.COLUMN_SORT_INDICATOR_TEMPLATE, {
-                className: this.getClassName('sort')
+                className: this.get('host').getClassName('sort')
             }));
+            
+            columns[c].node.append(columns[c].sortNode);
 
             if (c === 0) {
-                columns[c].node.addClass(this.getClassName('column', 'leftcorner'));
+                columns[c].node.addClass(this.get('host').getClassName('column', 'leftcorner'));
             } else if (c == (columns.length - 1)) {
-                columns[c].node.addClass(this.getClassName('column', 'rightcorner'));
+                columns[c].node.addClass(this.get('host').getClassName('column', 'rightcorner'));
             }
 
-            cnode.append(columns[c].sortNode);
-        }*/
+            this._theadNode.append(columns[c].node);
+        }
         
     },
+    
+    /**
+     * Default handler for table:sort
+     *
+     * @method _defSortFn
+     * @param e {Event}
+     */
+    _defSortFn : function(e) {
+        Y.log("_defSortFn", "info", "Y.DP.TableHeaders");
+
+        this.sort(e.headerTarget);
+    },
+
+    /**
+     * Default handler for CustomEvent queryUpdate
+     * 
+     * e.parameters holds an array of query strings to add to the URL
+     *
+     * @method _defQueryUpdateFn
+     * @param e {Event}
+     */
+    _defQueryUpdateFn : function(e) {
+        Y.log("_defQueryUpdateFn", "info", "Y.DP.TableHeaders");
+    },
+
+    /**
+     * Default handler for column mouseenter
+     *
+     * @method _uiSetColumnOver
+     * @param e {Event}
+     */
+    _uiSetColumnOver : function(e) {
+            var node = e.headerTarget;
+
+            if (!node.hasClass(this.get('host').getClassName('header', 'over'))) {
+                    node.addClass(this.get('host').getClassName('header', 'over'));
+            }
+    },
+
+    /**
+     * Default handler for column mouseexit
+     *
+     * @method _uiSetColumnOut
+     * @param e {Event}
+     */
+    _uiSetColumnOut : function(e) {
+            var node = e.headerTarget;
+
+            if (node.hasClass(this.get('host').getClassName('header', 'over'))) {
+                    node.removeClass(this.get('host').getClassName('header', 'over'));
+            }
+    },
+
 
     
     /**
@@ -754,7 +905,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
      * @property COLUMN_TEMPLATE
      * @type String
      */
-    COLUMN_TEMPLATE : '<th class="{className}">{value}</th>',
+    COLUMN_TEMPLATE : '<th class="{className}"><span class="{labelClassName}">{label}</span></th>',
     
     /**
      * Contains the sort indicator graphic
@@ -763,16 +914,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
      * @type String
      * @static
      */
-    COLUMN_SORT_INDICATOR_TEMPLATE : '<div class="{className}">&nbsp;</div>',
-
-    /**
-     * Column text content will be wrapped in this element.
-     *
-     * @property COLUMN_LABEL_TEMPLATE
-     * @type String
-     * @static
-     */
-    COLUMN_LABEL_TEMPLATE : '<span class="{className}">{label}</span>'
+    COLUMN_SORT_INDICATOR_TEMPLATE : '<div class="{className}">&nbsp;</div>'
     
     
 // Use NetBeans Code template "ymethod" to add methods here
@@ -782,13 +924,20 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
     /**
      * The plugin namespace
      *
-     * @property Headers.NS
+     * @property NS
      * @type String
      * @protected
      * @static
      */
-    NS : "tableHeaders",
-
+    NS : "headers",
+    
+    /**
+     * The plugin name
+     *
+     * @property NAME
+     * @type String
+     */
+    NAME : "tableHeaders",
 
     /**
      * Static property used to define the default attribute configuration of
@@ -800,9 +949,19 @@ Y.namespace('DP').TableHeaders = Y.Base.create( 'dp-table-headers-plugin', Y.Plu
      * @static
      */
     ATTRS : {
-        
-// Use NetBeans Code Template "yattr" to add attributes here
-}
+
+        /**
+         * Array of objects representing columns with keys for title and width
+         * This will be refactored into a columns object.
+         *
+         * @attribute columns
+         * @default Empty array
+         * @type Array
+         */
+        columns : {
+            value : Array()
+        }
+    }
         
 
 });

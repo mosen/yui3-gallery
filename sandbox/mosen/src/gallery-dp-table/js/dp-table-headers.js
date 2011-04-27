@@ -133,7 +133,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create('dp-table-headers', Y.Widget, [],
      * @param e {Event}
      */
     _defSortFn : function(e) {
-            Y.log('_defSortFn', 'info', 'Y.DP.TableHeaders');
+                Y.log('_defSortFn');
 
             this.sort(e.headerTarget);
     },
@@ -145,7 +145,7 @@ Y.namespace('DP').TableHeaders = Y.Base.create('dp-table-headers', Y.Widget, [],
      * @param e {Event}
      */
     _defQueryUpdateFn : function(e) {
-            Y.log('gallery-dp-table-headers:_defQueryUpdateFn');
+                Y.log('_defQueryUpdateFn');
     },
 
     /**

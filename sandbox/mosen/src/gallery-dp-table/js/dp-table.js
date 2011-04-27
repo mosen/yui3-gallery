@@ -82,6 +82,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
          * @see Widget.bindUI
          */
         bindUI : function() {
+                this.after('queryUpdate', this.handleParameterChange);
 
                 this._tbodyNode.delegate('selectstart', function(e) {
                     e.preventDefault();
@@ -427,8 +428,7 @@ Y.namespace('DP').Table = Y.Base.create('dp-table', Y.Widget, [], {
                  * @type Array
                  */
                 data : {
-                        value: null,
-                        validator: Lang.isArray
+                        value: null
                 },
 
                 /**
