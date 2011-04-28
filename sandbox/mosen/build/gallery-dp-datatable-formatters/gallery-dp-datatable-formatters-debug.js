@@ -56,7 +56,6 @@ Y.namespace('DP').DataTableFormatters = {
      */
     getDateFormatter: function(formatString) {
         return function(o) {
-            console.dir(o);
             
             var d;
             
@@ -131,6 +130,37 @@ Y.namespace('DP').DataTableFormatters = {
             } else {
                 return product;
             }
+        };
+    },
+    
+    /**
+     * Get a formatter which links to an object's view page.. supply prefix and field to use for the dynamic part of the URL
+     *
+     * @method getLinkFormatter
+     * @param formatString String String containing tokens to be substituted by Y.substitute eg. /user/id/{id}
+     * @param valueHash Object Hash of formatstring token to field key.
+     * @param displayField String Key to use for the inner text of the link.
+     * @return Node link to the object
+     * @public
+     */
+    getLinkFormatter : function(formatString, valueHash, displayField) {
+        Y.log("getLinkFormatter", "info", "DataTableFormatters");
+        
+        return function(o) {
+            
+            for (prop in valueHash) {
+                valueHash[prop] = o.record.getValue(valueHash[prop]);
+            }
+            
+            var href = Y.substitute(formatString, valueHash),
+                link = Y.Node.create(Y.substitute('<a href="{location}">{displayText}</a>', {
+                    location: href,
+                    displayText: o.record.getValue(displayField)
+                }));
+            
+            
+            
+            o.liner.append(link);
         };
     }
 
