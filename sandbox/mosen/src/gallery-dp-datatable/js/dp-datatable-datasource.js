@@ -20,8 +20,63 @@ function DPDataTableDataSource() {
     DPDataTableDataSource.superclass.constructor.apply(this, arguments);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// STATIC PROPERTIES
+//
+/////////////////////////////////////////////////////////////////////////////
+Y.mix(DPDataTableDataSource, {
+    /**
+     * The namespace for the plugin. This will be the property on the host which
+     * references the plugin instance.
+     *
+     * @property NS
+     * @type String
+     * @static
+     * @final
+     * @value "datasource"
+     */
+    NS: "datasource",
 
-Y.namespace('DP').DataTableDataSource = Y.extend( DPDataTableDataSource, Y.Plugin.DataTableDataSource, {
+    /**
+     * Class name.
+     *
+     * @property NAME
+     * @type String
+     * @static
+     * @final
+     * @value "dataTableDataSource"
+     */
+    NAME: "dataTableDataSource",
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// ATTRIBUTES
+//
+/////////////////////////////////////////////////////////////////////////////
+    ATTRS: {
+        /**
+        * @attribute datasource
+        * @description Pointer to DataSource instance.
+        * @type Y.DataSource
+        */
+        datasource: {
+            setter: "_setDataSource"
+        },
+        
+        /**
+        * @attribute initialRequest
+        * @description Request sent to DataSource immediately upon initialization.
+        * @type Object
+        */
+        initialRequest: {
+            setter: "_setInitialRequest"
+        }
+    }
+});
+
+
+Y.extend( DPDataTableDataSource, Y.Plugin.DataTableDataSource, {
     
     /**
      * Callback function passed to DataSource's sendRequest() method populates
@@ -38,3 +93,5 @@ Y.namespace('DP').DataTableDataSource = Y.extend( DPDataTableDataSource, Y.Plugi
         this.get("host").set("recordset", newrecords);
     }
 });
+
+Y.namespace('DP').DataTableDataSource = DPDataTableDataSource;
