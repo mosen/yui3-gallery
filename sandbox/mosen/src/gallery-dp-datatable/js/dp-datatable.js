@@ -52,61 +52,6 @@ var YLang = Y.Lang,
  */
 Y.namespace('DP').DataTable = Y.Base.create( 'dp-datatable', Y.DataTable.Base, [], {
 
-
-    /**
-     *
-     *
-     * @method initializer
-     * @param config {Object} Configuration object
-     * @protected
-     * @constructor
-     */
-//    initializer : function (config) {
-//
-//
-//    },
-
-    /**
-     * Create the DOM structure for the dp-datatable.
-     *
-     * @method renderUI
-     * @protected
-     */
-//    renderUI : function () {
-//
-//    },
-
-
-    /**
-     *
-     * @method bindUI
-     * @protected
-     */
-//    bindUI : function () {
-//
-//    },
-//    
-    /**
-     * Synchronizes the DOM state with the attribute settings
-     *
-     * @method syncUI
-     */
-//    syncUI : function () {
-//        
-//    },
-
-    /**
-     * Destructor lifecycle implementation for the dp-datatable class.
-     *
-     * @method destructor
-     * @protected
-     */
-//    destructor: function() { }
-    
-    
-    // Use NetBeans Code template "ymethod" to add methods here
-
-
     /**
     * Creates data cell element. 
     * Supports td reference to correct node YUI 
@@ -128,6 +73,7 @@ Y.namespace('DP').DataTable = Y.Base.create( 'dp-datatable', Y.DataTable.Base, [
         o.liner = o.td.one('div');
         
         formatvalue = this.formatDataCell(o);
+        
         if (Y.Lang.isString(formatvalue)) {
             o.value = formatvalue;
             o.liner.append(o.value);
@@ -146,55 +92,4 @@ Y.namespace('DP').DataTable = Y.Base.create( 'dp-datatable', Y.DataTable.Base, [
 
 }, {
 
-    /**
-     * Required NAME static field, to identify the Widget class and
-     * used as an event prefix, to generate class names etc. (set to the
-     * class name in camel case).
-     *
-     * @property Dp-datatable.NAME
-     * @type String
-     * @static
-     */
-//    NAME : "DataTable",
-
-    /**
-     * Static Object hash used to capture existing markup for progressive
-     * enhancement. Keys correspond to config attribute names and values
-     * are selectors used to inspect the contentBox for an existing node
-     * structure.
-     *
-     * @property Dp-datatable.HTML_PARSER
-     * @type Object
-     * @protected
-     * @static
-     */
-//    HTML_PARSER : {},
-
-    /**
-     * Static property used to define the default attribute configuration of
-     * the Widget.
-     *
-     * @property Dp-datatable.ATTRS
-     * @type Object
-     * @protected
-     * @static
-     */
-//    ATTRS : {
-        
-        /**
-         * Strings that need to be localized can be placed here
-         *
-         * @property Dp-datatable.ATTRS
-         * @type Object
-         * @protected
-         * @static
-         */
-//        strings: {
-//            value: {
-//                //yourkey:your String value
-//            }
-//        }
-
-        // Use NetBeans Code Template "yattr" to add attributes here
-    //}
 });

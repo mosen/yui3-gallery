@@ -146,12 +146,13 @@ Y.namespace('DP').DataTableFormatters = {
     getLinkFormatter : function(formatString, valueHash, displayField) {
         
         return function(o) {
+            var returnHash = [];
             
             for (prop in valueHash) {
-                valueHash[prop] = o.record.getValue(valueHash[prop]);
+                returnHash[prop] = o.record.getValue(valueHash[prop]);
             }
             
-            var href = Y.substitute(formatString, valueHash),
+            var href = Y.substitute(formatString, returnHash),
                 link = Y.Node.create(Y.substitute('<a href="{location}">{displayText}</a>', {
                     location: href,
                     displayText: o.record.getValue(displayField)
