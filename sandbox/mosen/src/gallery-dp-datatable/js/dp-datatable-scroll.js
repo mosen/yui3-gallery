@@ -7,6 +7,21 @@
  * @requires Y.Plugin.DataTableDataSource
  */
 
+// Need to re-add shortcuts to get them into this scope.
+
+var YNode = Y.Node,
+    YLang = Y.Lang,
+    YUA = Y.UA,
+    YgetClassName = Y.ClassNameManager.getClassName,
+    DATATABLE = "datatable",
+    CLASS_HEADER = YgetClassName(DATATABLE, "hd"),
+    CLASS_BODY = YgetClassName(DATATABLE, "bd"),
+    CLASS_DATA = YgetClassName(DATATABLE, "data"),
+    CLASS_SCROLLABLE = YgetClassName(DATATABLE, "scrollable"),
+    CONTAINER_HEADER = '<div class="'+CLASS_HEADER+'"></div>',
+    CONTAINER_BODY = '<div class="'+CLASS_BODY+'"></div>',
+    TEMPLATE_TABLE = '<table></table>';
+
 /**
  * Extension to DataTableScroll
  * 
@@ -122,7 +137,92 @@ Y.extend( DPDataTableScroll, Y.Plugin.DataTableScroll, {
         //Y.Profiler.stop('sync');
         //console.log(Y.Profiler.getReport("sync"));
         this.afterHostEvent('recordsetChange', this._syncWidths);
-    }    
+    },
+    
+   /**
+    * @description Adjusts the width of the TH and the TDs to make sure that the two are in sync
+    * 
+    * Implementation Details: 
+    *   Compares the width of the TH liner div to the the width of the TD node. The TD liner width
+    *   is not actually used because the TD often stretches past the liner if the parent DIV is very
+    *   large. Measuring the TD width is more accurate.
+    *   
+    *   Instead of measuring via .get('width'), 'clientWidth' is used, as it returns a number, whereas
+    *   'width' returns a string, In IE6, 'clientWidth' is not supported, so 'offsetWidth' is used.
+    *   'offsetWidth' is not as accurate on Chrome,FF as 'clientWidth' - thus the need for the fork.
+    * 
+    * @method _syncWidths
+    * @private
+    */
+    _syncWidths: function() {
+        var th = YNode.all('#'+this._parentContainer.get('id')+ ' .' + CLASS_HEADER + ' table thead th'), //nodelist of all THs
+            td = YNode.one('#'+this._parentContainer.get('id')+ ' .' + CLASS_BODY + ' table .' + CLASS_DATA).get('firstChild').get('children'), //nodelist of all TDs in 1st row
+            i,
+            len,
+            thWidth, tdWidth, thLiner, tdLiner,
+            ie = YUA.ie;
+            //stylesheet = new YStyleSheet('columnsSheet'),
+            //className;
+            
+            /*
+            This for loop goes through the first row of TDs in the table.
+            In a table, the width of the row is equal to the width of the longest cell in that column.
+            Therefore, we can observe the widths of the cells in the first row only, as they will be the same in all the cells below (in each respective column)
+            */
+            for (i=0, len = th.size(); i<len; i++) { 
+                
+                //className = '.'+td.item(i).get('classList')._nodes[0];
+                //If a width has not been already set on the TD:
+                //if (td.item(i).get('firstChild').getStyle('width') === "auto") {
+                    
+                    //Get the liners for the TH and the TD cell in question
+                    thLiner = th.item(i).get('firstChild'); //TODO: use liner API - how? this is a node.
+                    tdLiner = td.item(i).get('firstChild');
+                    
+                    /*
+                    If browser is not IE - get the clientWidth of the Liner div and the TD.
+                    Note:   We are not getting the width of the TDLiner, we are getting the width of the actual cell.
+                            Why? Because when the table is set to auto width, the cell will grow to try to fit the table in its container.
+                            The liner could potentially be much smaller than the cell width.
+                            
+                            TODO: Explore if there is a better way using only LINERS widths
+                    */
+                    if (!ie) {
+                        thWidth = thLiner.get('clientWidth'); //TODO: this should actually be done with getComputedStyle('width') but this messes up columns. Explore this option.
+                        tdWidth = td.item(i).get('clientWidth');
+                    }
+                    
+                    //IE wasn't recognizing clientWidths, so we are using offsetWidths.
+                    //TODO: should use getComputedStyle('width') because offsetWidth will screw up when padding is changed.
+                    else {
+                        thWidth = thLiner.get('offsetWidth');
+                        tdWidth = td.item(i).get('offsetWidth');
+                        //thWidth = parseFloat(thLiner.getComputedStyle('width').split('px')[0]);
+                        //tdWidth = parseFloat(td.item(i).getComputedStyle('width').split('px')[0]); /* TODO: for some reason, using tdLiner.get('clientWidth') doesn't work - why not? */
+                    }
+                                        
+                    //if TH is bigger than TD, enlarge TD Liner
+                    if (thWidth > tdWidth) {
+                        Y.log("thWidth:" + thWidth + " > tdWidth:" + tdWidth, "info", "DPDataTableScroll");
+                        tdLiner.setStyle('width', (thWidth - 20 + 'px'));
+                        //thLiner.setStyle('width', (tdWidth - 20 + 'px'));
+                        //stylesheet.set(className,{'width': (thWidth - 20 + 'px')});
+                    }
+                    
+                    //if TD is bigger than TH, enlarge TH Liner
+                    else if (tdWidth > thWidth) {
+                        thLiner.setStyle('width', (tdWidth - 20 + 'px'));
+                        tdLiner.setStyle('width', (tdWidth - 20 + 'px')); //if you don't set an explicit width here, when the width is set in line 368, it will auto-shrink the widths of the other cells (because they dont have an explicit width)
+                        //stylesheet.set(className,{'width': (tdWidth - 20 + 'px')});
+                    }
+                    
+                //}
+
+            }
+            
+            //stylesheet.enable();
+
+    }
 });
 
 Y.namespace('DP').DataTableScroll = DPDataTableScroll;
