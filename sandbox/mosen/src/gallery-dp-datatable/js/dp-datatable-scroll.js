@@ -29,7 +29,7 @@ var YNode = Y.Node,
  * @extends Y.Plugin.DataTableDataSource
  */
 function DPDataTableScroll() {
-    DPDataTableDataSource.superclass.constructor.apply(this, arguments);
+    DPDataTableScroll.superclass.constructor.apply(this, arguments);
 }
 
 /////////////////////////////////////////////////////////////////////////////

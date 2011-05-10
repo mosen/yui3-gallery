@@ -31,6 +31,12 @@ var YLang = Y.Lang,
     CLASS_DATA = YgetClassName(DATATABLE, "data"),
     CLASS_MSG = YgetClassName(DATATABLE, "msg"),
     CLASS_LINER = YgetClassName(DATATABLE, "liner"),
+    
+    // Added by mosen
+    CLASS_LINER_LEFTALIGN = YgetClassName(DATATABLE, "liner", "leftalign"),
+    CLASS_LINER_CENTERALIGN = YgetClassName(DATATABLE, "liner", "centeralign"),
+    CLASS_LINER_RIGHTALIGN = YgetClassName(DATATABLE, "liner", "rightalign"),
+    
     CLASS_FIRST = YgetClassName(DATATABLE, "first"),
     CLASS_LAST = YgetClassName(DATATABLE, "last"),
     CLASS_EVEN = YgetClassName(DATATABLE, "even"),
@@ -71,6 +77,10 @@ Y.namespace('DP').DataTable = Y.Base.create( 'dp-datatable', Y.DataTable.Base, [
         //TODO: attributes? or methods?
         o.headers = column.headers;
         o.classnames = column.get("classnames");
+        o.align = column.get("align");
+        if (!o.align) {
+            o.align = 'left';
+        }
         o.td = Y.Node.create(Y.substitute(this.tdTemplate, o));
         o.liner = o.td.one('div');
         
@@ -85,12 +95,48 @@ Y.namespace('DP').DataTable = Y.Base.create( 'dp-datatable', Y.DataTable.Base, [
     },
     
    /**
+    * Creates header row element.
+    *
+    * @method _createTheadTrNode
+    * @param o {Object} {thead, columns}.
+    * @param isFirst {Boolean} Is first row.
+    * @param isLast {Boolean} Is last row.
+    * @protected
+    * @returns Y.Node
+    */
+    _createTheadTrNode: function(o, isFirst, isLast) {
+        //TODO: custom classnames
+        o.id = Y.guid();
+        
+        var tr = Ycreate(Ysubstitute(this.get("trTemplate"), o)),
+            i = 0,
+            columns = o.columns,
+            len = columns.length,
+            column;
+
+         // Set FIRST/LAST class
+        if(isFirst) {
+            tr.addClass(CLASS_FIRST);
+        }
+        if(isLast) {
+            tr.addClass(CLASS_LAST);
+        }
+
+        for(; i<len; ++i) {
+            column = columns[i];
+            this._addTheadThNode({value:column.get("label"), column: column, tr:tr});
+        }
+
+        return tr;
+    },
+    
+   /**
     * @property tdTemplate
     * @description Tokenized markup template for TD node creation. removed {value} so that we can append to TD when there is no return value from the formatter
     * @type String
     * @default '<td headers="{headers}"><div class="'+CLASS_LINER+'">{value}</div></td>'
     */
-    tdTemplate: '<td headers="{headers}"><div class="'+CLASS_LINER+'"></div></td>'
+    tdTemplate: '<td headers="{headers}"><div class="'+CLASS_LINER+'" style="text-align:{align};"></div></td>'
 
 }, {
 
@@ -201,6 +247,21 @@ Y.namespace('DP').DataTableDataSource = DPDataTableDataSource;
  * @requires Y.Plugin.DataTableDataSource
  */
 
+// Need to re-add shortcuts to get them into this scope.
+
+var YNode = Y.Node,
+    YLang = Y.Lang,
+    YUA = Y.UA,
+    YgetClassName = Y.ClassNameManager.getClassName,
+    DATATABLE = "datatable",
+    CLASS_HEADER = YgetClassName(DATATABLE, "hd"),
+    CLASS_BODY = YgetClassName(DATATABLE, "bd"),
+    CLASS_DATA = YgetClassName(DATATABLE, "data"),
+    CLASS_SCROLLABLE = YgetClassName(DATATABLE, "scrollable"),
+    CONTAINER_HEADER = '<div class="'+CLASS_HEADER+'"></div>',
+    CONTAINER_BODY = '<div class="'+CLASS_BODY+'"></div>',
+    TEMPLATE_TABLE = '<table></table>';
+
 /**
  * Extension to DataTableScroll
  * 
@@ -208,7 +269,7 @@ Y.namespace('DP').DataTableDataSource = DPDataTableDataSource;
  * @extends Y.Plugin.DataTableDataSource
  */
 function DPDataTableScroll() {
-    DPDataTableDataSource.superclass.constructor.apply(this, arguments);
+    DPDataTableScroll.superclass.constructor.apply(this, arguments);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -316,10 +377,193 @@ Y.extend( DPDataTableScroll, Y.Plugin.DataTableScroll, {
         //Y.Profiler.stop('sync');
         //console.log(Y.Profiler.getReport("sync"));
         this.afterHostEvent('recordsetChange', this._syncWidths);
-    }    
+    },
+    
+   /**
+    * @description Adjusts the width of the TH and the TDs to make sure that the two are in sync
+    * 
+    * Implementation Details: 
+    *   Compares the width of the TH liner div to the the width of the TD node. The TD liner width
+    *   is not actually used because the TD often stretches past the liner if the parent DIV is very
+    *   large. Measuring the TD width is more accurate.
+    *   
+    *   Instead of measuring via .get('width'), 'clientWidth' is used, as it returns a number, whereas
+    *   'width' returns a string, In IE6, 'clientWidth' is not supported, so 'offsetWidth' is used.
+    *   'offsetWidth' is not as accurate on Chrome,FF as 'clientWidth' - thus the need for the fork.
+    * 
+    * @method _syncWidths
+    * @private
+    */
+    _syncWidths: function() {
+        var th = YNode.all('#'+this._parentContainer.get('id')+ ' .' + CLASS_HEADER + ' table thead th'), //nodelist of all THs
+            td = YNode.one('#'+this._parentContainer.get('id')+ ' .' + CLASS_BODY + ' table .' + CLASS_DATA).get('firstChild').get('children'), //nodelist of all TDs in 1st row
+            i,
+            len,
+            thWidth, tdWidth, thLiner, tdLiner,
+            ie = YUA.ie;
+            //stylesheet = new YStyleSheet('columnsSheet'),
+            //className;
+            
+            /*
+            This for loop goes through the first row of TDs in the table.
+            In a table, the width of the row is equal to the width of the longest cell in that column.
+            Therefore, we can observe the widths of the cells in the first row only, as they will be the same in all the cells below (in each respective column)
+            */
+            for (i=0, len = th.size(); i<len; i++) { 
+                
+                //className = '.'+td.item(i).get('classList')._nodes[0];
+                //If a width has not been already set on the TD:
+                //if (td.item(i).get('firstChild').getStyle('width') === "auto") {
+                    
+                    //Get the liners for the TH and the TD cell in question
+                    thLiner = th.item(i).get('firstChild'); //TODO: use liner API - how? this is a node.
+                    tdLiner = td.item(i).get('firstChild');
+                    
+                    /*
+                    If browser is not IE - get the clientWidth of the Liner div and the TD.
+                    Note:   We are not getting the width of the TDLiner, we are getting the width of the actual cell.
+                            Why? Because when the table is set to auto width, the cell will grow to try to fit the table in its container.
+                            The liner could potentially be much smaller than the cell width.
+                            
+                            TODO: Explore if there is a better way using only LINERS widths
+                    */
+                    if (!ie) {
+                        thWidth = thLiner.get('clientWidth'); //TODO: this should actually be done with getComputedStyle('width') but this messes up columns. Explore this option.
+                        tdWidth = td.item(i).get('clientWidth');
+                    }
+                    
+                    //IE wasn't recognizing clientWidths, so we are using offsetWidths.
+                    //TODO: should use getComputedStyle('width') because offsetWidth will screw up when padding is changed.
+                    else {
+                        thWidth = thLiner.get('offsetWidth');
+                        tdWidth = td.item(i).get('offsetWidth');
+                        //thWidth = parseFloat(thLiner.getComputedStyle('width').split('px')[0]);
+                        //tdWidth = parseFloat(td.item(i).getComputedStyle('width').split('px')[0]); /* TODO: for some reason, using tdLiner.get('clientWidth') doesn't work - why not? */
+                    }
+                                        
+                    //if TH is bigger than TD, enlarge TD Liner
+                    if (thWidth > tdWidth) {
+                        Y.log("thWidth:" + thWidth + " > tdWidth:" + tdWidth, "info", "DPDataTableScroll");
+                        tdLiner.setStyle('width', (thWidth - 20 + 'px'));
+                        //thLiner.setStyle('width', (tdWidth - 20 + 'px'));
+                        //stylesheet.set(className,{'width': (thWidth - 20 + 'px')});
+                    }
+                    
+                    //if TD is bigger than TH, enlarge TH Liner
+                    else if (tdWidth > thWidth) {
+                        thLiner.setStyle('width', (tdWidth - 20 + 'px'));
+                        tdLiner.setStyle('width', (tdWidth - 20 + 'px')); //if you don't set an explicit width here, when the width is set in line 368, it will auto-shrink the widths of the other cells (because they dont have an explicit width)
+                        //stylesheet.set(className,{'width': (tdWidth - 20 + 'px')});
+                    }
+                    
+                //}
+
+            }
+            
+            //stylesheet.enable();
+
+    }
 });
 
 Y.namespace('DP').DataTableScroll = DPDataTableScroll;
+function DPDataTableSort() {
+    DPDataTableSort.superclass.constructor.apply(this, arguments);
+}
+
+Y.mix(DPDataTableSort, Y.Plugin.DataTableSort);
+
+Y.extend( DPDataTableSort, Y.Plugin.DataTableSort, {
+   /**
+    * Before header cell element is created, inserts link markup around {value}.
+    * 
+    * Fix static "title" in TH node
+    * Ticket #2529943 / http://yuilibrary.com/projects/yui3/ticket/2529943
+    *
+    * @method _beforeCreateTheadThNode
+    * @param o {Object} {value, column, tr}.
+    * @protected
+    */
+    _beforeCreateTheadThNode: function(o) {
+        Y.log("augmented sort th node", "info", "object");
+        if(o.column.get("sortable")) {
+            o.value = Y.substitute(this.get("template"), {
+                link_class: o.link_class || "",
+                link_title: o.column.get("title") || "title",
+                link_href: "#",
+                value: o.value
+            });
+        }
+    },
+    
+    /**
+     * Updates sort UI.
+     *
+     * @method _uiSetLastSortedBy
+     * @param val {Object} New lastSortedBy object {key,dir}.
+     * @param dt {Y.DataTable.Base} Host.
+     * @protected
+     */
+    
+    _uiSetLastSortedBy: function(prevVal, newVal, dt) {
+        
+        
+        var prevKey = prevVal && prevVal.key,
+            prevDir = prevVal && prevVal.dir,
+            newKey = newVal && newVal.key,
+            newDir = newVal && newVal.dir,
+            cs = dt.get("columnset"),
+            prevColumn = cs.keyHash[prevKey],
+            newColumn = cs.keyHash[newKey],
+            tbodyNode = dt._tbodyNode,
+            prevRowList, newRowList;
+
+            //Y.log('prev:' + prevDir + ' new:' + newDir, 'error', 'SORT');
+        // Clear previous UI
+        if(prevColumn) {
+            //Y.log('previous column:');
+            //Y.log(prevColumn);
+            
+            prevColumn.thNode.removeClass(YgetClassName(DATATABLE, prevDir));
+            
+            //Y.log("."+YgetClassName(COLUMN, prevColumn.get("id")));
+            
+            //prevRowList = tbodyNode.all("."+YgetClassName(COLUMN, prevColumn.get("id")));
+            prevRowList = tbodyNode.all('td[headers="' + prevColumn.get('id') + '"]');
+            
+            prevRowList.removeClass(YgetClassName(DATATABLE, prevDir));
+        }
+
+        // Add new sort UI
+        if(newColumn) {
+            //Y.log(newColumn);
+            
+            newColumn.thNode.addClass(YgetClassName(DATATABLE, newDir));
+            
+            //Y.log("."+YgetClassName(COLUMN, newColumn.get("id")));
+            newRowList = tbodyNode.all('td[headers="' + newColumn.get('id') + '"]');
+            //newRowList = tbodyNode.all("."+YgetClassName(COLUMN, newColumn.get("id")));
+            
+            //Y.log(newRowList);
+            newRowList.addClass(YgetClassName(DATATABLE, newDir));
+        }
+    }
+});
+
+Y.namespace('DP').DataTableSort = DPDataTableSort;
+Y.mix(Y.Column, {
+   ATTRS : {
+       align : {
+           value : 'left'
+       },
+       
+       /**
+        * Function used for sorting column values, applied to recordset.
+        */
+       sortFn : {
+           value : null
+       }
+   } 
+}, false, null, 0, true); // Mix with merge
 
 
 }, '@VERSION@' ,{requires:['datatable', 'datatable-datasource']});

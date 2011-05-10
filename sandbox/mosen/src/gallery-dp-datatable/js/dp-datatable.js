@@ -29,6 +29,12 @@ var YLang = Y.Lang,
     CLASS_DATA = YgetClassName(DATATABLE, "data"),
     CLASS_MSG = YgetClassName(DATATABLE, "msg"),
     CLASS_LINER = YgetClassName(DATATABLE, "liner"),
+    
+    // Added by mosen
+    CLASS_LINER_LEFTALIGN = YgetClassName(DATATABLE, "liner", "leftalign"),
+    CLASS_LINER_CENTERALIGN = YgetClassName(DATATABLE, "liner", "centeralign"),
+    CLASS_LINER_RIGHTALIGN = YgetClassName(DATATABLE, "liner", "rightalign"),
+    
     CLASS_FIRST = YgetClassName(DATATABLE, "first"),
     CLASS_LAST = YgetClassName(DATATABLE, "last"),
     CLASS_EVEN = YgetClassName(DATATABLE, "even"),
@@ -69,6 +75,10 @@ Y.namespace('DP').DataTable = Y.Base.create( 'dp-datatable', Y.DataTable.Base, [
         //TODO: attributes? or methods?
         o.headers = column.headers;
         o.classnames = column.get("classnames");
+        o.align = column.get("align");
+        if (!o.align) {
+            o.align = 'left';
+        }
         o.td = Y.Node.create(Y.substitute(this.tdTemplate, o));
         o.liner = o.td.one('div');
         
@@ -83,12 +93,48 @@ Y.namespace('DP').DataTable = Y.Base.create( 'dp-datatable', Y.DataTable.Base, [
     },
     
    /**
+    * Creates header row element.
+    *
+    * @method _createTheadTrNode
+    * @param o {Object} {thead, columns}.
+    * @param isFirst {Boolean} Is first row.
+    * @param isLast {Boolean} Is last row.
+    * @protected
+    * @returns Y.Node
+    */
+    _createTheadTrNode: function(o, isFirst, isLast) {
+        //TODO: custom classnames
+        o.id = Y.guid();
+        
+        var tr = Ycreate(Ysubstitute(this.get("trTemplate"), o)),
+            i = 0,
+            columns = o.columns,
+            len = columns.length,
+            column;
+
+         // Set FIRST/LAST class
+        if(isFirst) {
+            tr.addClass(CLASS_FIRST);
+        }
+        if(isLast) {
+            tr.addClass(CLASS_LAST);
+        }
+
+        for(; i<len; ++i) {
+            column = columns[i];
+            this._addTheadThNode({value:column.get("label"), column: column, tr:tr});
+        }
+
+        return tr;
+    },
+    
+   /**
     * @property tdTemplate
     * @description Tokenized markup template for TD node creation. removed {value} so that we can append to TD when there is no return value from the formatter
     * @type String
     * @default '<td headers="{headers}"><div class="'+CLASS_LINER+'">{value}</div></td>'
     */
-    tdTemplate: '<td headers="{headers}"><div class="'+CLASS_LINER+'"></div></td>'
+    tdTemplate: '<td headers="{headers}"><div class="'+CLASS_LINER+'" style="text-align:{align};"></div></td>'
 
 }, {
 
