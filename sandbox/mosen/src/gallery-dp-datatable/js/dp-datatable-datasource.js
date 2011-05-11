@@ -3,6 +3,7 @@
  *
  * @module DP.DataTableDataSource
  * @requires Y.Plugin.DataTableDataSource
+ * @deprecated Use gallery-user-patch-2529975 instead
  */
 
 /**

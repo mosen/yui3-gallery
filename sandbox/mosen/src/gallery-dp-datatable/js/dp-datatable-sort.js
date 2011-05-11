@@ -1,3 +1,7 @@
+/**
+ * @deprecated use gallery user patch instead
+ */
+
 function DPDataTableSort() {
     DPDataTableSort.superclass.constructor.apply(this, arguments);
 }
@@ -14,6 +18,7 @@ Y.extend( DPDataTableSort, Y.Plugin.DataTableSort, {
     * @method _beforeCreateTheadThNode
     * @param o {Object} {value, column, tr}.
     * @protected
+    * @deprecated Use gallery-user-patch-2529943
     */
     _beforeCreateTheadThNode: function(o) {
         Y.log("augmented sort th node", "info", "object");
