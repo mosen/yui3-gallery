@@ -1,4 +1,4 @@
-YUI.add('gallery-user-patch-dt-rollup', function(Y) {
+YUI.add('gallery-user-patch-datatable-rollup', function(Y) {
 
 /**
  * This patch addresses YUI tickets #2529920, #2529921
