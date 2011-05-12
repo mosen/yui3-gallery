@@ -9,10 +9,12 @@ YUI.add('gallery-ebisu-dualslider', function(Y) {
 
 /* Any frequently used shortcuts, strings and constants */
 var Lang = Y.Lang,
+    classMgr = Y.ClassNameManager,
     NODE = 'node',
     MIN       = 'min',
     MAX       = 'max',
-    VALUE     = 'value',
+    LEFT_VALUE = 'leftvalue',
+    RIGHT_VALUE = 'rightvalue',
 
     round = Math.round;
 
@@ -53,10 +55,15 @@ Y.namespace('Ebisu').DualSlider = Y.Base.create( 'ebisu-dualslider', Y.Slider, [
          * @property thumbs
          * @type {Node}
          */
-        this.thumbs = this.renderThumbs();
+        this.thumb = this.renderThumb();
+        this.thumb.addClass(this.getClassName('thumb', 'left'));
+        
+        this.rightThumb = this.renderThumb();
+        this.thumb.addClass(this.getClassName('thumb', 'right'));
+//this.thumbs = this.renderThumbs();
 
-        this.rail.appendChild( this.thumbs[0] );
-        this.rail.appendChild( this.thumbs[1] );
+        this.rail.appendChild( this.thumb );
+        this.rail.appendChild( this.rightThumb );
         // @TODO: insert( contentBox, 'replace' ) or setContent?
         contentBox.appendChild( this.rail );
 
@@ -64,13 +71,12 @@ Y.namespace('Ebisu').DualSlider = Y.Base.create( 'ebisu-dualslider', Y.Slider, [
         contentBox.addClass( this.getClassName( this.axis ) );
     },
 
-    
-    
     /**
      * Render markup for both thumbs.
      *
      * @method renderThumbs
      * @private
+     * @return Array containing both thumbs
      */
     renderThumbs : function() {
         
@@ -78,28 +84,20 @@ Y.namespace('Ebisu').DualSlider = Y.Base.create( 'ebisu-dualslider', Y.Slider, [
         this._initThumbUrl();
 
         var imageUrl = this.get( 'thumbUrl' ),
-            leftThumb = Y.Node.create(
-                Y.substitute( this.THUMB_TEMPLATE, {
-                    thumbClass      : this.getClassName( 'thumb', 'l' ),
+            tplThumb = Y.substitute( this.THUMB_TEMPLATE, {
+                    thumbClass      : this.getClassName( 'thumb' ),
                     thumbShadowClass: this.getClassName( 'thumb', 'shadow' ),
                     thumbImageClass : this.getClassName( 'thumb', 'image' ),
                     thumbShadowUrl  : imageUrl,
                     thumbImageUrl   : imageUrl
-                }) 
-            ),
-            rightThumb = Y.Node.create(
-                Y.substitute( this.THUMB_TEMPLATE, {
-                    thumbClass      : this.getClassName( 'thumb', 'r' ),
-                    thumbShadowClass: this.getClassName( 'thumb', 'shadow' ),
-                    thumbImageClass : this.getClassName( 'thumb', 'image' ),
-                    thumbShadowUrl  : imageUrl,
-                    thumbImageUrl   : imageUrl
-                }) 
-            );
+                }), 
+            leftThumb = Y.Node.create( tplThumb ),
+            rightThumb = Y.Node.create( tplThumb );
             
-        
-        return [ leftThumb, rightThumb ]; 
-        
+            leftThumb.addClass(this.getClassName( 'thumb', 'left' ));
+            rightThumb.addClass(this.getClassName( 'thumb', 'right' ));
+            
+        return [ leftThumb, rightThumb ];     
     },
     
     /**
@@ -122,14 +120,15 @@ Y.namespace('Ebisu').DualSlider = Y.Base.create( 'ebisu-dualslider', Y.Slider, [
          * @protected
          */
         this._dd = new Y.DD.Drag( {
-            node   : this.thumbs[0],
+            node   : this.thumb,
             bubble : false,
             on     : {
                 'drag:start': Y.bind( this._onDragStart, this )
             },
             after  : {
                 'drag:drag': Y.bind( this._afterDrag,    this ),
-                'drag:end' : Y.bind( this._afterDragEnd, this )
+                'drag:end' : Y.bind( this._afterDragEnd, this ),
+                'drag:align' : Y.bind( this._afterDragAlign, this )
             }
         } );
         
@@ -142,14 +141,15 @@ Y.namespace('Ebisu').DualSlider = Y.Base.create( 'ebisu-dualslider', Y.Slider, [
          * @protected
          */
         this._ddr = new Y.DD.Drag( {
-            node   : this.thumbs[1],
+            node   : this.rightThumb,
             bubble : false,
             on     : {
                 'drag:start': Y.bind( this._onDragStart, this )
             },
             after  : {
                 'drag:drag': Y.bind( this._afterDrag,    this ),
-                'drag:end' : Y.bind( this._afterDragEnd, this )
+                'drag:end' : Y.bind( this._afterDragEnd, this ),
+                'drag:align' : Y.bind( this._afterDragAlign, this )
             }
         } );
         
@@ -160,47 +160,73 @@ Y.namespace('Ebisu').DualSlider = Y.Base.create( 'ebisu-dualslider', Y.Slider, [
     },
     
     /**
-     * Calculates and caches
-     * (range between max and min) / (rail length)
-     * for fast runtime calculation of position -&gt; value.
+     * Dispatches the <code>thumbMove</code> event.
+     * 
+     * Prevent thumbmove from being dispatched if the thumb movement has been restricted.
      *
-     * @method _calculateFactor
+     * @method _afterDrag
+     * @param e {Event} the <code>drag:drag</code> event from the thumb
      * @protected
      */
-    _calculateFactor: function () {
+    _afterDrag: function ( e ) {
+        var thumbXY = e.info.xy[ this._key.xyIndex ],
+            railXY  = e.target.con._regionCache[ this._key.minEdge ],
+            offset = (thumbXY - railXY);
+            
+        //console.dir(this._dd);
         
-        // TODO : should only require one calculation because both thumbs operate on the same factor?
-        this._calculateFactorDual(this.thumbs[0]);
-        this._calculateFactorDual(this.thumbs[1]);
-       
+        if (offset > 20) {
+            //this._dd.actXY = [0, this._dd.actXY[1]];
+            //this._dd.stopDrag();
+            e.preventDefault();
+        }
+
+        this.fire( 'thumbMove', {
+            offset : offset,
+            ddEvent: e
+        } );
     },
     
     /**
-     * Calculates and caches value to rail offset
+     * Handles the drag align event to prevent nodes from being dragged outside of the range.
      *
-     * @method _calculateFactorDual
-     * @param {Node} Thumb node
-     * @private
+     * @method _afterDragAlign
+     * @param e {Event} the <code>drag:align</code> event from the thumb
+     * @protected
      */
-    _calculateFactorDual : function(thumb) {
+    _afterDragAlign: function ( e ) {
+
+        if (e.currentTarget == this._ddr) {
+            
+        }
         
-        var length    = this.get( 'length' ),
-            thumbSize = thumb.getStyle( this._key.dim ),
-            min       = this.get( MIN ),
-            max       = this.get( MAX );
-
-        // The default thumb width is based on Sam skin's thumb dimension.
-        // This attempts to allow for rendering off-DOM, then attaching
-        // without the need to call syncUI().  It is still recommended
-        // to call syncUI() in these cases though, just to be sure.
-        length = parseFloat( length, 10 ) || 150;
-        thumbSize = parseFloat( thumbSize, 10 ) || 15;
-
-        this._factor = ( max - min ) / ( length - thumbSize );
-
-    }
+        
+        if (e.currentTarget.actXY[0] > 100) {
+            this._dd.actXY = [99, this._dd.actXY[1]];
+            //this._dd.stopDrag();
+            //e.preventDefault();
+        }
+    },
     
+    /**
+     * Verifies that the current value is within the min - max range.  If
+     * not, value is set to either min or max, depending on which is
+     * closer.
+     *
+     * @method _verifyValue
+     * @protected
+     */
+    _verifyValue: function () {
+        var value   = this.get( VALUE ),
+            nearest = this._nearestValue( value );
 
+        if ( value !== nearest ) {
+            // @TODO Can/should valueChange, minChange, etc be queued
+            // events? To make dd.set( 'min', n ); execute after minChange
+            // subscribers before on/after valueChange subscribers.
+            this.set( VALUE, nearest );
+        }
+    }
 }, {
 
     /**
@@ -223,11 +249,110 @@ Y.namespace('Ebisu').DualSlider = Y.Base.create( 'ebisu-dualslider', Y.Slider, [
      * @static
      */
     ATTRS : {
+        /**
+         * The value associated with the thumb's current position on the
+         * rail. Defaults to the value inferred from the thumb's current
+         * position. Specifying value in the constructor will move the
+         * thumb to the position that corresponds to the supplied value.
+         *
+         * @attribute value
+         * @type { Number }
+         * @default (inferred from current thumb position)
+         */
+        value: {
+            value : 0,
+            setter: '_setNewValue'
+        },
         
-        // Use NetBeans Code Template "yattr" to add attributes here
+        
+        /**
+         * The value associated with the thumb's current position on the
+         * rail. Defaults to the value inferred from the thumb's current
+         * position. Specifying value in the constructor will move the
+         * thumb to the position that corresponds to the supplied value.
+         *
+         * @attribute rightValue
+         * @type { Number }
+         * @default (inferred from current thumb position)
+         */
+        rightValue: {
+            value : 0,
+            setter: '_setNewValue'
+        }
     }
         
 
+});
+/**
+ *
+ *
+ * @module gallery-ebisu-dualslider
+ * @requires Base, Slider
+ */
+
+/* Any frequently used shortcuts, strings and constants */
+var Lang = Y.Lang,
+    classMgr = Y.ClassNameManager,
+    NODE = 'node',
+    MIN       = 'min',
+    MAX       = 'max',
+    LEFT_VALUE = 'leftvalue',
+    RIGHT_VALUE = 'rightvalue',
+
+    round = Math.round;
+
+/**
+ * Extends Slider to provide a second thumb which cannot cross-over the first thumb.
+ *
+ * @class Ebisu.DualSlider
+ * @extends Slider
+ */
+Y.namespace('Ebisu').ChildSlider = Y.Base.create( 'Slider', Y.Slider, [], {
+
+
+    /**
+     * Lifecycle : Create the DOM structure for the ebisu-dualslider.
+     *
+     * @method renderUI
+     * @protected
+     */
+    renderUI : function () {
+        
+        var contentBox = this.get( 'contentBox' );
+
+        /**
+         * The Node instance of the Slider's rail element.  Do not write to
+         * this property.
+         *
+         * @property rail
+         * @type {Node}
+         */
+        this.rail = this.get('parent').rail;
+
+        /**
+         * The Node instance of the Slider's thumb element.  Do not write to
+         * this property.
+         *
+         * @property thumbs
+         * @type {Node}
+         */
+        this.thumb = this.renderThumb();
+//this.thumbs = this.renderThumbs();
+
+        this.rail.appendChild( this.thumb );
+        this.rail.appendChild( this.rightThumb );
+        // @TODO: insert( contentBox, 'replace' ) or setContent?
+
+
+        // <span class="yui3-slider-x">
+        contentBox.addClass( this.getClassName( this.axis ) );
+    }
+}, {
+    NAME: "Slider",
+
+    ATTRS : {
+        parent: null
+    }
 });
 
 

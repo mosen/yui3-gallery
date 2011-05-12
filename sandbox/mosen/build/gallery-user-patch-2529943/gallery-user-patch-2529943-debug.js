@@ -25,4 +25,4 @@ Y.Plugin.DataTableSort.prototype._beforeCreateTheadThNode = function(o) {
 };
 
 
-}, '@VERSION@' ,{skinnable:false, requires:['datatable', 'datasource']});
+}, '@VERSION@' ,{requires:['datatable', 'datasource'], skinnable:false});

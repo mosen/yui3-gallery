@@ -22,7 +22,7 @@ Y.Plugin.DataTableDataSource.prototype.onDataReturnInitializeTable = function(e)
             
         newRecordSet.set('records', e.response.results);
         this.get("host").set("recordset", newRecordSet);    
-}
+};
 
 
-}, '@VERSION@' ,{skinnable:false, requires:['datatable', 'datasource']});
+}, '@VERSION@' ,{requires:['datatable', 'datasource'], skinnable:false});

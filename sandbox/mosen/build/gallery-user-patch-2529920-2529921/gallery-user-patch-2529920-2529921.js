@@ -37,4 +37,4 @@ Y.DataTable.Base.prototype._createTbodyTdNode = function(o) {
 };
 
 
-}, '@VERSION@' ,{skinnable:false, requires:['datatable']});
+}, '@VERSION@' ,{requires:['datatable'], skinnable:false});
