@@ -109,10 +109,13 @@ Y.DataTable.Base.prototype._addCaptionNode = function(tableNode) {
     var caption = this.get('caption');
     
     if (caption) {
-        this._captionNode = tableNode.createCaption();
+        //this._captionNode = tableNode.createCaption();
+        // Changed to Y.Node.create because the DataTableScroll plugin will reference the property, causing an error if it isn't a node.
+        this._captionNode = Y.Node.create('<caption></caption>');
         return this._captionNode;
     } else {
-        return true; // DataTable.Base.renderUI relies on all render methods to evaluate true, otherwise it bails.
+        this._captionNode = Y.Node.create('<caption></caption>');
+        return this._captionNode;
     }
 };
 
