@@ -20,4 +20,4 @@ Y.Plugin.DataTableDataSource.prototype.onDataReturnInitializeTable = function(e)
             
         newRecordSet.set('records', e.response.results);
         this.get("host").set("recordset", newRecordSet);    
-}
+};

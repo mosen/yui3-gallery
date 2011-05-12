@@ -3,6 +3,7 @@
  * 
  * #2529920 - Documentation refers to the cell formatter function having access to the TD element, but the TD reference is not passed.
  * #2529921 - {value} template is shown when the record data is null or undefined
+ * TODO #2529894 setting value using innerHTML could potentially expose a XSS exploit.
  * 
  * The {value} token remains because Y.substitute does not delete invalid tokens, in case that they
  * are later used for recursive substitutions. One possible fix could be to have substitute delete tokens
