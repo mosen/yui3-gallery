@@ -1,5 +1,33 @@
 YUI.add('gallery-user-patch-datatable-rollup', function(Y) {
 
+// patch for YUI 3.3.0 DataTable bug
+// forum post: http://yuilibrary.com/forum/viewtopic.php?f=92&t=6355
+// bug ticket: http://yuilibrary.com/projects/yui3/ticket/2529808
+// also see: https://github.com/mosen/yui3-gallery/tree/master/sandbox/mosen/src/gallery-dp-datatable
+//
+
+Y.Plugin.DataTableScroll.prototype.injected_bindUI = Y.Plugin.DataTableScroll.prototype.bindUI;
+Y.Plugin.DataTableScroll.prototype.bindUI = function() {
+    this.get('host').after('recordsetChange', Y.bind(this.syncUI, this));
+
+    Y.log('Calling unpatched bindUI', 'info', 'gallery-user-patch-2529808');
+    this.injected_bindUI();
+};
+
+Y.Plugin.DataTableScroll.prototype.injected_syncWidths = Y.Plugin.DataTableScroll.prototype._syncWidths;
+Y.Plugin.DataTableScroll.prototype._syncWidths = function() {
+    
+    var dt = this.get('host'),
+        rs = dt.get('recordset'),
+        rsLength = rs.getLength();
+
+    if (rsLength === 0) {
+        return false;
+    } else {
+        Y.log('Calling unpatched _syncWidths', 'info', 'gallery-user-patch-2529808');
+        this.injected_syncWidths();
+    }
+};
 /**
  * This patch addresses YUI tickets #2529920, #2529921
  * 
@@ -15,6 +43,13 @@ YUI.add('gallery-user-patch-datatable-rollup', function(Y) {
  * @requires DataTable.Base
  */
 
+// Default: '<td headers="{headers}"><div class="'+CLASS_LINER+'">{value}</div></td>'
+// Changed in this fix because the value is not supplied at the Ysubstitute stage, it is appended to the liner.
+var YgetClassName = Y.ClassNameManager.getClassName,
+    DATATABLE = "datatable",
+    CLASS_LINER = YgetClassName(DATATABLE, "liner"),
+    TD_TEMPLATE = '<td headers="{headers}"><div class="'+CLASS_LINER+'" style="text-align:{align};"></div></td>';
+
 Y.DataTable.Base.prototype._createTbodyTdNode = function(o) {
     var column = o.column,
         formatvalue = null;
@@ -22,16 +57,16 @@ Y.DataTable.Base.prototype._createTbodyTdNode = function(o) {
     //TODO: attributes? or methods?
     o.headers = column.headers;
     o.classnames = column.get("classnames");
-    o.td = Y.Node.create(Y.substitute(this.tdTemplate, o));
+    o.td = Y.Node.create(Y.substitute(TD_TEMPLATE, o));
     o.liner = o.td.one('div');
 
     formatvalue = this.formatDataCell(o);
 
-    // If the formatter didn't use the td reference to populate the cell, it must have returned
-    // a string value instead.
+    // Formatters should return a string value to be appended, lack of a string here indicates that the formatter has utilised 
+    // the o.td reference to populate the cell.
     if (Y.Lang.isString(formatvalue)) {
         o.value = formatvalue;
-        o.liner.append(o.value);
+        o.liner.append(formatvalue);
     }
 
     return o.td;

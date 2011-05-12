@@ -157,9 +157,8 @@ Y.namespace('DP').DataTableFormatters = {
                     displayText: o.record.getValue(displayField)
                 }));
             
-            
-            
             o.liner.append(link);
+            return true;
         };
     }
 
