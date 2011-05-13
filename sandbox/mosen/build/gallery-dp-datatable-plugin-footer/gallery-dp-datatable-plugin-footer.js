@@ -196,4 +196,4 @@ YUI.add('gallery-dp-datatable-plugin-footer', function(Y) {
 //}, '@VERSION@' ,{requires:['base']});
 
 
-}, '@VERSION@' ,{requires:['datatable', 'datatype']});
+}, '@VERSION@' ,{requires:['base', 'datatable', 'datatype']});
