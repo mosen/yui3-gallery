@@ -4,12 +4,11 @@
 // also see: https://github.com/mosen/yui3-gallery/tree/master/sandbox/mosen/src/gallery-dp-datatable
 //
 
-Y.Plugin.DataTableScroll.prototype.injected_bindUI = Y.Plugin.DataTableScroll.prototype.bindUI;
-Y.Plugin.DataTableScroll.prototype.bindUI = function() {
-    this.get('host').after('recordsetChange', Y.bind(this.syncUI, this));
+Y.Plugin.DataTableScroll.prototype.injected_initializer = Y.Plugin.DataTableScroll.prototype.initializer;
 
-    Y.log('Calling unpatched bindUI', 'info', 'gallery-user-patch-2529808');
-    this.injected_bindUI();
+Y.Plugin.DataTableScroll.prototype.initializer = function(config) {
+    this.get('host').after('recordsetChange', Y.bind(this.syncUI, this));
+    this.injected_initializer(config);
 };
 
 Y.Plugin.DataTableScroll.prototype.injected_syncWidths = Y.Plugin.DataTableScroll.prototype._syncWidths;
