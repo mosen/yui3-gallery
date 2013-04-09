@@ -1,86 +1,19 @@
 YUI.add('gallery-checkboxgroups', function(Y) {
 
-var Y_NodeList = Y.NodeList,
-    ArrayProto = Array.prototype,
-    ArrayMethods = [
-        /** Returns a new NodeList combining the given NodeList(s) 
-          * @for NodeList
-          * @method concat
-          * @param {NodeList | Array} valueN Arrays/NodeLists and/or values to
-          * concatenate to the resulting NodeList
-          * @return {NodeList} A new NodeList comprised of this NodeList joined with the input.
-          */
-        'concat',
-        /** Removes the first last from the NodeList and returns it.
-          * @for NodeList
-          * @method pop
-          * @return {Node} The last item in the NodeList.
-          */
-        'pop',
-        /** Adds the given Node(s) to the end of the NodeList. 
-          * @for NodeList
-          * @method push
-          * @param {Node | DOMNode} nodeN One or more nodes to add to the end of the NodeList. 
-          */
-        'push',
-        /** Removes the first item from the NodeList and returns it.
-          * @for NodeList
-          * @method shift
-          * @return {Node} The first item in the NodeList.
-          */
-        'shift',
-        /** Returns a new NodeList comprising the Nodes in the given range. 
-          * @for NodeList
-          * @method slice
-          * @param {Number} begin Zero-based index at which to begin extraction.
-          As a negative index, start indicates an offset from the end of the sequence. slice(-2) extracts the second-to-last element and the last element in the sequence.
-          * @param {Number} end Zero-based index at which to end extraction. slice extracts up to but not including end.
-          slice(1,4) extracts the second element through the fourth element (elements indexed 1, 2, and 3).
-          As a negative index, end indicates an offset from the end of the sequence. slice(2,-1) extracts the third element through the second-to-last element in the sequence.
-          If end is omitted, slice extracts to the end of the sequence.
-          * @return {NodeList} A new NodeList comprised of this NodeList joined with the input.
-          */
-        'slice',
-        /** Changes the content of the NodeList, adding new elements while removing old elements.
-          * @for NodeList
-          * @method splice
-          * @param {Number} index Index at which to start changing the array. If negative, will begin that many elements from the end.
-          * @param {Number} howMany An integer indicating the number of old array elements to remove. If howMany is 0, no elements are removed. In this case, you should specify at least one new element. If no howMany parameter is specified (second syntax above, which is a SpiderMonkey extension), all elements after index are removed.
-          * {Node | DOMNode| element1, ..., elementN 
-          The elements to add to the array. If you don't specify any elements, splice simply removes elements from the array.
-          * @return {NodeList} The element(s) removed.
-          */
-        'splice',
-        /** Adds the given Node(s) to the beginning of the NodeList. 
-          * @for NodeList
-          * @method push
-          * @param {Node | DOMNode} nodeN One or more nodes to add to the NodeList. 
-          */
-        'unshift'
-    ];
-
-
-Y.Array.each(ArrayMethods, function(name) {
-    Y_NodeList.prototype[name] = function() {
-        var args = [],
-            i,
-            arg;
-
-        for (i=0; i<arguments.length; i++) { // use DOM nodes/nodeLists 
-            arg = arguments[i];
-            args.push(arg._node || arg._nodes || arg);
-        }
-        return Y.Node.scrubVal(ArrayProto[name].apply(this._nodes, args));
-    };
-});
 "use strict";
 
 /**********************************************************************
+ * Various behaviors that can be attached to a group of checkboxes.
+ *
+ * @module gallery-checkboxgroups
+ * @main gallery-checkboxgroups
+ */
+
+/**
  * <p>Base class for enforcing constraints on groups of checkboxes.</p>
  *
  * <p>Derived classes must override <code>enforceConstraints()</code>.</p>
  * 
- * @module gallery-checkboxgroups
  * @class CheckboxGroup
  * @constructor
  * @param cb_list {String|Node|NodeList} The list of checkboxes to manage
@@ -89,11 +22,6 @@ Y.Array.each(ArrayMethods, function(name) {
 function CheckboxGroup(
 	/* string/Node/NodeList */	cb_list)
 {
-	if (arguments.length === 0)	// derived class prototype
-	{
-		return;
-	}
-
 	this.cb_list = new Y.NodeList('');
 	this.ev_list = [];
 	this.splice(0, 0, cb_list);
@@ -111,6 +39,7 @@ function checkboxChanged(
 CheckboxGroup.prototype =
 {
 	/**
+	 * @method getCheckboxList
 	 * @return {NodeList} List of managed checkboxes
 	 */
 	getCheckboxList: function()
@@ -122,6 +51,7 @@ CheckboxGroup.prototype =
 	 * Same functionality as <code>Array.splice()</code>.  Operates on the
 	 * list of managed checkboxes.
 	 * 
+	 * @method splice
 	 * @param start {Int} Insertion index
 	 * @param delete_count {Int} Number of items to remove, starting from <code>start</code>
 	 * @param cb_list {String|Node|NodeList} The list of checkboxes to insert at <code>start</code>
@@ -151,7 +81,7 @@ CheckboxGroup.prototype =
 			},
 			this);
 		}
-		else if (cb_list instanceof Y.Node)
+		else if (cb_list && cb_list._node)
 		{
 			this.cb_list.splice(start, delete_count, cb_list);
 			this.ev_list.splice(start, delete_count, cb_list.on('click', checkboxChanged, this));
@@ -163,6 +93,13 @@ CheckboxGroup.prototype =
 		}
 	},
 
+	/**
+	 * Call this if you modify the checkbox programmatically, since that
+	 * will not fire a click event.
+	 * 
+	 * @method checkboxChanged
+	 * @param cb {Node|String} checkbox that was modified
+	 */
 	checkboxChanged: function(
 		/* checkbox */	cb)
 	{
@@ -186,6 +123,7 @@ CheckboxGroup.prototype =
 	/**
 	 * Derived classes must override this function to implement the desired behavior.
 	 * 
+	 * @method enforceConstraints
 	 * @param cb_list {String|Object|Array} The list of checkboxes
 	 * @param index {Int} The index of the checkbox that changed
 	 */
@@ -196,6 +134,7 @@ CheckboxGroup.prototype =
 	},
 
 	/**
+	 * @method allChecked
 	 * @return {boolean} <code>true</code> if all checkboxes are checked
 	 */
 	allChecked: function()
@@ -214,6 +153,7 @@ CheckboxGroup.prototype =
 	},
 
 	/**
+	 * @method allUnchecked
 	 * @return {boolean} <code>true</code> if all checkboxes are unchecked
 	 */
 	allUnchecked: function()
@@ -231,6 +171,7 @@ CheckboxGroup.prototype =
 	},
 
 	/**
+	 * @method allDisabled
 	 * @return {boolean} <code>true</code> if all checkboxes are disabled
 	 */
 	allDisabled: function()
@@ -249,14 +190,18 @@ CheckboxGroup.prototype =
 };
 
 Y.CheckboxGroup = CheckboxGroup;
+/**
+ * @module gallery-checkboxgroups
+ */
+
 /**********************************************************************
  * At least one checkbox must be selected.  If the last one is turned off,
  * the active, adjacent one is turned on.  The exact algorithm is explained
  * in "Tog on Interface".  The checkboxes are assumed to be ordered in the
  * order they were added.
  * 
- * @module gallery-checkboxgroups
  * @class AtLeastOneCheckboxGroup
+ * @extends CheckboxGroup
  * @constructor
  * @param cb_list {String|Node|NodeList} The list of checkboxes to manage
  */
@@ -311,6 +256,11 @@ function getNextActiveIndex(
 
 Y.extend(AtLeastOneCheckboxGroup, CheckboxGroup,
 {
+	/**
+	 * @method enforceConstraints
+	 * @param cb_list {String|Object|Array} The list of checkboxes
+	 * @param index {Int} The index of the checkbox that changed
+	 */
 	enforceConstraints: function(
 		/* NodeList */	cb_list,
 		/* int */		index)
@@ -338,12 +288,16 @@ Y.extend(AtLeastOneCheckboxGroup, CheckboxGroup,
 });
 
 Y.AtLeastOneCheckboxGroup = AtLeastOneCheckboxGroup;
+/**
+ * @module gallery-checkboxgroups
+ */
+
 /**********************************************************************
  * At most one checkbox can be selected.  If one is turned on, the active
  * one is turned off.
  * 
- * @module gallery-checkboxgroups
  * @class AtMostOneCheckboxGroup
+ * @extends CheckboxGroup
  * @constructor
  * @param cb_list {String|Node|NodeList} The list of checkboxes to manage
  */
@@ -356,6 +310,11 @@ function AtMostOneCheckboxGroup(
 
 Y.extend(AtMostOneCheckboxGroup, CheckboxGroup,
 {
+	/**
+	 * @method enforceConstraints
+	 * @param cb_list {String|Object|Array} The list of checkboxes
+	 * @param index {Int} The index of the checkbox that changed
+	 */
 	enforceConstraints: function(
 		/* NodeList */	cb_list,
 		/* int */	index)
@@ -377,13 +336,17 @@ Y.extend(AtMostOneCheckboxGroup, CheckboxGroup,
 });
 
 Y.AtMostOneCheckboxGroup = AtMostOneCheckboxGroup;
+/**
+ * @module gallery-checkboxgroups
+ */
+
 /**********************************************************************
  * All checkboxes can be selected and a select-all checkbox is available
  * to check all. This check-all box is automatically changed if any other
  * checkbox changes state.
  * 
- * @module gallery-checkboxgroups
  * @class SelectAllCheckboxGroup
+ * @extends CheckboxGroup
  * @constructor
  * @param select_all_cb {String|Object} The checkbox that triggers "select all"
  * @param cb_list {String|Node|NodeList} The list of checkboxes to manage
@@ -394,32 +357,52 @@ function SelectAllCheckboxGroup(
 	/* string/Node/NodeList */	cb_list)
 {
 	this.select_all_cb = Y.one(select_all_cb);
-	this.select_all_cb.on('click', this.toggleSelectAll, this);
+	this.select_all_cb.on('click', updateSelectAll, this);
 
 	SelectAllCheckboxGroup.superclass.constructor.call(this, cb_list);
 }
 
+function updateSelectAll()
+{
+	var checked = this.select_all_cb.get('checked');
+	var count   = this.cb_list.size();
+	for (var i=0; i<count; i++)
+	{
+		var cb = this.cb_list.item(i);
+		if (!cb.get('disabled'))
+		{
+			cb.set('checked', checked);
+		}
+	}
+};
+
 Y.extend(SelectAllCheckboxGroup, CheckboxGroup,
 {
+	/**
+	 * @method getSelectAllCheckbox
+	 * @return {Node} checkbox that controls "select all"
+	 */
 	getSelectAllCheckbox: function()
 	{
 		return this.select_all_cb;
 	},
 
+	/**
+	 * Toggle the setting of the "select all" checkbox.
+	 *
+	 * @method toggleSelectAll
+	 */
 	toggleSelectAll: function()
 	{
-		var checked = this.select_all_cb.get('checked');
-		var count   = this.cb_list.size();
-		for (var i=0; i<count; i++)
-		{
-			var cb = this.cb_list.item(i);
-			if (!cb.get('disabled'))
-			{
-				cb.set('checked', checked);
-			}
-		}
+		this.select_call_cb.set('checked', !this.select_all_cb.get('checked'));
+		updateSelectAll.call(this);
 	},
 
+	/**
+	 * @method enforceConstraints
+	 * @param cb_list {String|Object|Array} The list of checkboxes
+	 * @param index {Int} The index of the checkbox that changed
+	 */
 	enforceConstraints: function(
 		/* NodeList */	cb_list,
 		/* int */		index)
@@ -429,11 +412,15 @@ Y.extend(SelectAllCheckboxGroup, CheckboxGroup,
 });
 
 Y.SelectAllCheckboxGroup = SelectAllCheckboxGroup;
+/**
+ * @module gallery-checkboxgroups
+ */
+
 /**********************************************************************
  * Enables the given list of nodes if any checkboxes are checked.
  * 
- * @module gallery-checkboxgroups
  * @class EnableIfAnyCheckboxGroup
+ * @extends CheckboxGroup
  * @constructor
  * @param cb_list {String|Node|NodeList} The list of checkboxes to manage
  * @param nodes {String|NodeList} The nodes to enable/disable
@@ -450,6 +437,11 @@ function EnableIfAnyCheckboxGroup(
 
 Y.extend(EnableIfAnyCheckboxGroup, CheckboxGroup,
 {
+	/**
+	 * @method enforceConstraints
+	 * @param cb_list {String|Object|Array} The list of checkboxes
+	 * @param index {Int} The index of the checkbox that changed
+	 */
 	enforceConstraints: function(
 		/* NodeList */	cb_list,
 		/* int */		index)
@@ -465,4 +457,4 @@ Y.extend(EnableIfAnyCheckboxGroup, CheckboxGroup,
 Y.EnableIfAnyCheckboxGroup = EnableIfAnyCheckboxGroup;
 
 
-}, 'gallery-2011.02.09-21-32' ,{requires:['node-base']});
+}, 'gallery-2012.05.16-20-37' ,{requires:['node-base']});

@@ -9,26 +9,30 @@ YUI.add('gallery-formmgr-css-validation', function(Y) {
  * <p>The following classes can be applied to a form element for
  * pre-validation:</p>
  *
- *	<dl>
- *	<dt><code>yiv-required</code></dt>
- *		<dd>Value must not be empty.</dd>
+ * <dl>
+ * <dt><code>yiv-required</code></dt>
+ * <dd>Value must not be empty.</dd>
  *
- *	<dt><code>yiv-length:[x,y]</code></dt>
- *		<dd>String must be at least x characters and at most y characters.
- *		At least one of x and y must be specified.</dd>
+ * <dt><code>yiv-length:[x,y]</code></dt>
+ * <dd>String must be at least x characters and at most y characters.
+ * At least one of x and y must be specified.</dd>
  *
- *	<dt><code>yiv-integer:[x,y]</code></dt>
- *		<dd>The integer value must be at least x and at most y.
- *		x and y are both optional.</dd>
+ * <dt><code>yiv-integer:[x,y]</code></dt>
+ * <dd>The integer value must be at least x and at most y.
+ * x and y are both optional.</dd>
  *
- *	<dt><code>yiv-decimal:[x,y]</code></dt>
- *		<dd>The decimal value must be at least x and at most y.  Exponents are
- *		not allowed.  x and y are both optional.</dd>
- *	</dl>
+ * <dt><code>yiv-decimal:[x,y]</code></dt>
+ * <dd>The decimal value must be at least x and at most y.  Exponents are
+ * not allowed.  x and y are both optional.</dd>
+ * </dl>
  *
  * <p>If we ever need to allow exponents, we can use yiv-float.</p>
  *
- * @module gallery-formmgr-css-validation
+ * @module gallery-formmgr
+ * @submodule gallery-formmgr-css-validation
+ */
+
+/**
  * @class FormManager
  */
 
@@ -45,7 +49,7 @@ var decimal_class_re  = /(?:^|\s+)yiv-decimal(?::\[([-+]?(?:[0-9]+\.?|[0-9]+\.[0
  * Regular expression used to determine if a value is an integer.
  * This can be localized, e.g., allow for thousands separator.
  * 
- * @config Y.FormManager.integer_value_re
+ * @property integer_value_re
  * @type {RegExp}
  * @static
  */
@@ -55,7 +59,7 @@ Y.FormManager.integer_value_re = /^[-+]?[0-9]+$/;
  * Regular expression used to determine if a value is a decimal number.
  * This can be localized, e.g., use the correct decimal separator.
  * 
- * @config Y.FormManager.decimal_value_re
+ * @property decimal_value_re
  * @type {RegExp}
  * @static
  */
@@ -79,7 +83,7 @@ Y.FormManager.decimal_value_re = /^[-+]?(?:[0-9]+\.?|[0-9]*\.[0-9]+)$/;
  * <dd>Displayed when <code>yiv-decimal</code> fails on an input field.</dd>
  * </dl>
  * 
- * @config Y.FormManager.Strings
+ * @property Strings
  * @type {Object}
  * @static
  */
@@ -114,16 +118,17 @@ function hasLimit(
 /**
  * Validate an input based on its CSS data.
  * 
- * @method Y.FormManager.validateFromCSSData
+ * @method validateFromCSSData
  * @static
- * @param e {DOM Element} The field to validate.
- * @return {Object} Status:
- *		<dl>
- *		<dt>keepGoing</dt>
- *		<dd>(Boolean) <code>true</code> if further validation should be done.</dd>
- *		<dt>error</dt>
- *		<dd>(String) The error message, if any.</dd>
- *		</dl>
+ * @param e {Element|Node} The field to validate.
+ * @param [msg_list] {Map} Map of message types to custom messages.
+ * @return {Object} Status
+ * <dl>
+ * <dt>keepGoing</dt>
+ * <dd>(Boolean) <code>true</code> if further validation should be done.</dd>
+ * <dt>error</dt>
+ * <dd>(String) The error message, if any.</dd>
+ * </dl>
  */
 Y.FormManager.validateFromCSSData = function(
 	/* element */	e,
@@ -131,9 +136,9 @@ Y.FormManager.validateFromCSSData = function(
 {
 	var Strings = Y.FormManager.Strings;
 
-	if (e instanceof Y.Node)
+	if (e._node)
 	{
-		e = Y.Node.getDOMNode(e);
+		e = e._node;
 	}
 
 	var required = Y.DOM.hasClass(e, required_class);
@@ -167,7 +172,7 @@ Y.FormManager.validateFromCSSData = function(
 			if (hasLimit(m[1]) && hasLimit(m[2]) &&
 				parseInt(m[1], 10) > parseInt(m[2], 10))
 			{
-				Y.log(e.name+' has min_length > max_length', 'error', 'FormManager');
+				Y.error(e.name+' has min_length > max_length', null, 'FormManager');
 			}
 
 			var msg     = null;
@@ -213,7 +218,7 @@ Y.FormManager.validateFromCSSData = function(
 			if (hasLimit(m[1]) && hasLimit(m[2]) &&
 				parseInt(m[1], 10) > parseInt(m[2], 10))
 			{
-				Y.log(e.name+' has min_value > max_value', 'error', 'FormManager');
+				Y.error(e.name+' has min_value > max_value', null, 'FormManager');
 			}
 
 			var value = parseInt(e.value, 10);
@@ -254,7 +259,7 @@ Y.FormManager.validateFromCSSData = function(
 			if (hasLimit(m[1]) && hasLimit(m[2]) &&
 				parseFloat(m[1]) > parseFloat(m[2]))
 			{
-				Y.log(e.name+' has min_value > max_value', 'error', 'FormManager');
+				Y.error(e.name+' has min_value > max_value', null, 'FormManager');
 			}
 
 			var value = parseFloat(e.value);
@@ -294,5 +299,96 @@ Y.FormManager.validateFromCSSData = function(
 	return { keepGoing: true };
 };
 
+/**
+ * Trim leading and trailing whitespace from the specified fields, except
+ * when a field has the CSS class yiv-no-trim.
+ * 
+ * @method cleanValues
+ * @static
+ * @param e {Array} The fields to clean.
+ * @return {boolean} <code>true</code> if there are any file inputs.
+ */
+Y.FormManager.cleanValues = function(
+	/* array */	e)
+{
+	var has_file_inputs = false;
+	for (var i=0; i<e.length; i++)
+	{
+		var input = e[i];
+		var type  = input.type && input.type.toLowerCase();
+		if (type == 'file')
+		{
+			has_file_inputs = true;
+		}
+		else if (type == 'select-multiple')
+		{
+			// don't change the value
+		}
+		else if (input.value && !Y.DOM.hasClass(input, 'yiv-no-trim'))
+		{
+			input.value = Y.Lang.trim(input.value);
+		}
+	}
 
-}, 'gallery-2011.04.13-22-38' ,{requires:['substitute']});
+	return has_file_inputs;
+};
+
+/**
+ * <p>Names of supported status values, highest precedence first.</p>
+ * 
+ * <p>This is static because it links to CSS rules that define the
+ * appearance of each status type:  .formmgr-has{status}</p>
+ * 
+ * @property status_order
+ * @type {Array}
+ * @default [ 'error', 'warn', 'success', 'info' ]
+ * @static
+ */
+Y.FormManager.status_order =
+[
+	'error',
+	'warn',
+	'success',
+	'info'
+];
+
+/**
+ * Get the precedence of the given status name.
+ * 
+ * @method getStatusPrecedence
+ * @static
+ * @param status {String} The name of the status value.
+ * @return {int} The position in the <code>status_order</code> array.
+ */
+Y.FormManager.getStatusPrecedence = function(
+	/* string */	status)
+{
+	for (var i=0; i<Y.FormManager.status_order.length; i++)
+	{
+		if (status == Y.FormManager.status_order[i])
+		{
+			return i;
+		}
+	}
+
+	return Y.FormManager.status_order.length;
+};
+
+/**
+ * Compare two status values.
+ * 
+ * @method statusTakesPrecedence
+ * @static
+ * @param orig_status {String} The name of the original status value.
+ * @param new_status {String} The name of the new status value.
+ * @return {boolean} <code>true</code> if <code>new_status</code> takes precedence over <code>orig_status</code>
+ */
+Y.FormManager.statusTakesPrecedence = function(
+	/* string */	orig_status,
+	/* string */	new_status)
+{
+	return (!orig_status || Y.FormManager.getStatusPrecedence(new_status) < Y.FormManager.getStatusPrecedence(orig_status));
+};
+
+
+}, 'gallery-2012.05.23-19-56' ,{requires:['substitute']});

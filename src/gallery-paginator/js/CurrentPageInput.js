@@ -5,9 +5,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * Generates an input field for setting the current page.
  *
- * @module gallery-paginator
  * @class Paginator.ui.CurrentPageInput
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -21,6 +24,7 @@ Paginator.ui.CurrentPageInput = function(
 	p.after('recordOffsetChange', this.update,  this);
 	p.after('rowsPerPageChange',  this.update,  this);
 	p.after('totalRecordsChange', this.update,  this);
+	p.after('disabledChange',     this.update,  this);
 
 	p.after('pageInputClassChange', this.update, this);
 };
@@ -56,7 +60,7 @@ Paginator.ui.CurrentPageInput.prototype =
 	 */
 	destroy: function()
 	{
-		this.span.remove(true);
+		this.span.remove().destroy(true);
 		this.span       = null;
 		this.input      = null;
 		this.page_count = null;
@@ -72,6 +76,10 @@ Paginator.ui.CurrentPageInput.prototype =
 	render: function(
 		id_base)
 	{
+		if (this.span) {
+			this.span.remove().destroy(true);
+		}
+
 		this.span = Y.Node.create(
 			'<span id="'+id_base+'-page-input">' +
 			Y.substitute(this.paginator.get('pageInputTemplate'),
@@ -108,6 +116,7 @@ Paginator.ui.CurrentPageInput.prototype =
 
 		this.span.set('className', this.paginator.get('pageInputClass'));
 		this.input.set('value', this.paginator.getCurrentPage());
+		this.input.set('disabled', this.paginator.get('disabled'));
 		this.page_count.set('innerHTML', this.paginator.getTotalPages());
 	},
 

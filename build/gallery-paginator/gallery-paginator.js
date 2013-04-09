@@ -8,9 +8,13 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
- * The Paginator widget provides a set of controls to navigate through paged
- * data.
- *
+ * The Paginator widget provides a set of controls to navigate through
+ * paged data.
+ * 
+ * @module gallery-paginator
+ */
+
+/**
  * To instantiate a Paginator, pass a configuration object to the contructor.
  * The configuration object should contain the following properties:
  * <ul>
@@ -18,8 +22,8 @@ http://developer.yahoo.net/yui/license.txt
  *   <li>totalRecords : <em>n</em> (int or Paginator.VALUE_UNLIMITED)</li>
  * </ul>
  *
- * @module gallery-paginator
  * @class Paginator
+ * @extends Widget
  * @constructor
  * @param config {Object} Object literal to set instance and ui component
  * configuration.
@@ -85,7 +89,7 @@ Y.mix(Paginator, {
      *
      * @method Paginator.isNumeric
      * @param v {Number|String} value to be checked for number or numeric string
-     * @returns {Boolean} true if the input is coercable into a finite number
+     * @return {Boolean} true if the input is coercable into a finite number
      * @static
      */
     isNumeric : function (v) {
@@ -391,7 +395,7 @@ Y.extend(Paginator, Y.Widget,
      */
     updateVisibility : function (e) {
         var alwaysVisible = this.get('alwaysVisible'),
-            totalRecords,visible,rpp,rppOptions,i,len;
+            totalRecords,visible,rpp,rppOptions,i,len,rppOption,rppValue;
 
         if (!e || e.type === 'alwaysVisibleChange' || !alwaysVisible) {
             totalRecords = this.get('totalRecords');
@@ -401,7 +405,9 @@ Y.extend(Paginator, Y.Widget,
 
             if (Y.Lang.isArray(rppOptions)) {
                 for (i = 0, len = rppOptions.length; i < len; ++i) {
-                    rpp = Math.min(rpp,rppOptions[i]);
+                    rppOption = rppOptions[i];
+                    rppValue  = Y.Lang.isValue(rppOption.value) ? rppOption.value : rppOption;
+                    rpp       = Math.min(rpp,rppValue);
                 }
             }
 
@@ -511,7 +517,7 @@ Y.extend(Paginator, Y.Widget,
     /**
      * Get the start and end record indexes of the specified page.
      * @method getPageRecords
-     * @param page {number} (optional) The page (current page if not specified)
+     * @param [page] {number} The page (current page if not specified)
      * @return {Array} [start_index, end_index]
      */
     getPageRecords : function (page) {
@@ -767,7 +773,7 @@ Y.extend(Paginator, Y.Widget,
             this._pageChanged = false;
 
             for (var k in state) {
-                if (state.hasOwnProperty(k) && this._configs.hasOwnProperty(k)) {
+                if (state.hasOwnProperty(k)) {
                     this.set(k,state[k]);
                 }
             }
@@ -863,9 +869,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * Generates an input field for setting the current page.
  *
- * @module gallery-paginator
  * @class Paginator.ui.CurrentPageInput
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -879,6 +888,7 @@ Paginator.ui.CurrentPageInput = function(
 	p.after('recordOffsetChange', this.update,  this);
 	p.after('rowsPerPageChange',  this.update,  this);
 	p.after('totalRecordsChange', this.update,  this);
+	p.after('disabledChange',     this.update,  this);
 
 	p.after('pageInputClassChange', this.update, this);
 };
@@ -914,7 +924,7 @@ Paginator.ui.CurrentPageInput.prototype =
 	 */
 	destroy: function()
 	{
-		this.span.remove(true);
+		this.span.remove().destroy(true);
 		this.span       = null;
 		this.input      = null;
 		this.page_count = null;
@@ -930,6 +940,10 @@ Paginator.ui.CurrentPageInput.prototype =
 	render: function(
 		id_base)
 	{
+		if (this.span) {
+			this.span.remove().destroy(true);
+		}
+
 		this.span = Y.Node.create(
 			'<span id="'+id_base+'-page-input">' +
 			Y.substitute(this.paginator.get('pageInputTemplate'),
@@ -966,6 +980,7 @@ Paginator.ui.CurrentPageInput.prototype =
 
 		this.span.set('className', this.paginator.get('pageInputClass'));
 		this.input.set('value', this.paginator.getCurrentPage());
+		this.input.set('disabled', this.paginator.get('disabled'));
 		this.page_count.set('innerHTML', this.paginator.getTotalPages());
 	},
 
@@ -987,10 +1002,13 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to generate the textual report of current pagination status.
  * E.g. "Now viewing page 1 of 13".
  *
- * @module gallery-paginator
  * @class Paginator.ui.CurrentPageReport
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -1111,6 +1129,10 @@ Paginator.ui.CurrentPageReport.prototype = {
      * @return {HTMLElement}
      */
     render : function (id_base) {
+        if (this.span) {
+            this.span.remove(true);
+        }
+
         this.span = Y.Node.create(
             '<span id="'+id_base+'-page-report"></span>');
         this.span.set('className', this.paginator.get('pageReportClass'));
@@ -1145,9 +1167,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to generate the link to jump to the first page.
  *
- * @module gallery-paginator
  * @class Paginator.ui.FirstPageLink
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -1159,6 +1184,7 @@ Paginator.ui.FirstPageLink = function (p) {
     p.after('recordOffsetChange',this.update,this);
     p.after('rowsPerPageChange',this.update,this);
     p.after('totalRecordsChange',this.update,this);
+    p.after('disabledChange',this.update,this);
 
     p.after('firstPageLinkLabelChange',this.rebuild,this);
     p.after('firstPageLinkClassChange',this.rebuild,this);
@@ -1237,6 +1263,11 @@ Paginator.ui.FirstPageLink.prototype = {
             c     = p.get('firstPageLinkClass'),
             label = p.get('firstPageLinkLabel');
 
+        if (this.link) {
+            this.link.remove(true);
+            this.span.remove(true);
+        }
+
         this.link = Y.Node.create(
             '<a href="#" id="'+id_base+'-first-link">'+label+'</a>');
         this.link.set('className', c);
@@ -1261,7 +1292,7 @@ Paginator.ui.FirstPageLink.prototype = {
         }
 
         var par = this.current ? this.current.get('parentNode') : null;
-        if (this.paginator.getCurrentPage() > 1) {
+        if (this.paginator.getCurrentPage() > 1 && !this.paginator.get('disabled')) {
             if (par && this.current === this.span) {
                 par.replaceChild(this.link,this.current);
                 this.current = this.link;
@@ -1312,9 +1343,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to display a menu for selecting the range of items to display.
  *
- * @module gallery-paginator
  * @class Paginator.ui.ItemRangeDropdown
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -1328,6 +1362,7 @@ Paginator.ui.ItemRangeDropdown = function(
 	p.after('recordOffsetChange', this.update,  this);
 	p.after('rowsPerPageChange',  this.update,  this);
 	p.after('totalRecordsChange', this.update,  this);
+	p.after('disabledChange',     this.update,  this);
 
 	p.after('itemRangeDropdownClassChange', this.update, this);
 };
@@ -1363,7 +1398,7 @@ Paginator.ui.ItemRangeDropdown.prototype =
 	 */
 	destroy: function()
 	{
-		this.span.remove(true);
+		this.span.remove().destroy(true);
 		this.span       = null;
 		this.menu       = null;
 		this.page_count = null;
@@ -1379,6 +1414,10 @@ Paginator.ui.ItemRangeDropdown.prototype =
 	render: function(
 		id_base)
 	{
+		if (this.span) {
+			this.span.remove().destroy(true);
+		}
+
 		this.span = Y.Node.create(
 			'<span id="'+id_base+'-item-range">' +
 			Y.substitute(this.paginator.get('itemRangeDropdownTemplate'),
@@ -1443,6 +1482,7 @@ Paginator.ui.ItemRangeDropdown.prototype =
 
 		this.span.set('className', this.paginator.get('itemRangeDropdownClass'));
 		this.menu.set('selectedIndex', page-1);
+		this.menu.set('disabled', this.paginator.get('disabled'));
 	},
 
 	_onChange: function(e)
@@ -1457,9 +1497,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to generate the link to jump to the last page.
  *
- * @module gallery-paginator
  * @class Paginator.ui.LastPageLink
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -1471,9 +1514,10 @@ Paginator.ui.LastPageLink = function (p) {
     p.after('recordOffsetChange',this.update,this);
     p.after('rowsPerPageChange',this.update,this);
     p.after('totalRecordsChange',this.update,this);
+    p.after('disabledChange',this.update,this);
 
-	p.after('lastPageLinkClassChange', this.rebuild, this);
-	p.after('lastPageLinkLabelChange', this.rebuild, this);
+    p.after('lastPageLinkClassChange', this.rebuild, this);
+    p.after('lastPageLinkLabelChange', this.rebuild, this);
 };
 
 /**
@@ -1559,6 +1603,12 @@ Paginator.ui.LastPageLink.prototype = {
             label = p.get('lastPageLinkLabel'),
             last  = p.getTotalPages();
 
+        if (this.link) {
+            this.link.remove(true);
+            this.span.remove(true);
+            this.na.remove(true);
+        }
+
         this.link = Y.Node.create(
             '<a href="#" id="'+id_base+'-last-link">'+label+'</a>');
         this.link.set('className', c);
@@ -1598,17 +1648,15 @@ Paginator.ui.LastPageLink.prototype = {
         }
 
         var par   = this.current ? this.current.get('parentNode') : null,
-            after = this.link;
+            after = this.link,
+            total = this.paginator.getTotalPages();
 
         if (par) {
-            switch (this.paginator.getTotalPages()) {
-                case Paginator.VALUE_UNLIMITED :
-                    after = this.na;
-                    break;
-
-                case this.paginator.getCurrentPage() :
-                    after = this.span;
-                    break;
+            if (total === Paginator.VALUE_UNLIMITED) {
+                after = this.na;
+            } else if (total === this.paginator.getCurrentPage() ||
+                        this.paginator.get('disabled')) {
+                after = this.span;
             }
 
             if (this.current !== after) {
@@ -1656,9 +1704,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to generate the link to jump to the next page.
  *
- * @module gallery-paginator
  * @class Paginator.ui.NextPageLink
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -1670,9 +1721,10 @@ Paginator.ui.NextPageLink = function (p) {
     p.after('recordOffsetChange', this.update,this);
     p.after('rowsPerPageChange', this.update,this);
     p.after('totalRecordsChange', this.update,this);
+    p.after('disabledChange', this.update,this);
 
-	p.after('nextPageLinkClassChange', this.rebuild, this);
-	p.after('nextPageLinkLabelChange', this.rebuild, this);
+    p.after('nextPageLinkClassChange', this.rebuild, this);
+    p.after('nextPageLinkLabelChange', this.rebuild, this);
 };
 
 /**
@@ -1748,6 +1800,11 @@ Paginator.ui.NextPageLink.prototype = {
             label = p.get('nextPageLinkLabel'),
             last  = p.getTotalPages();
 
+        if (this.link) {
+            this.link.remove(true);
+            this.span.remove(true);
+        }
+
         this.link = Y.Node.create(
             '<a href="#" id="'+id_base+'-next-link">'+label+'</a>');
         this.link.set('className', c);
@@ -1775,7 +1832,7 @@ Paginator.ui.NextPageLink.prototype = {
         var last = this.paginator.getTotalPages(),
             par  = this.current ? this.current.get('parentNode') : null;
 
-        if (this.paginator.getCurrentPage() !== last) {
+        if (this.paginator.getCurrentPage() !== last && !this.paginator.get('disabled')) {
             if (par && this.current === this.span) {
                 par.replaceChild(this.link,this.current);
                 this.current = this.link;
@@ -1826,9 +1883,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to generate the page links
  *
- * @module gallery-paginator
  * @class Paginator.ui.PageLinks
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -1840,6 +1900,7 @@ Paginator.ui.PageLinks = function (p) {
     p.after('recordOffsetChange',this.update,this);
     p.after('rowsPerPageChange',this.update,this);
     p.after('totalRecordsChange',this.update,this);
+    p.after('disabledChange',this.update,this);
 
     p.after('pageLinksContainerClassChange', this.rebuild,this);
     p.after('pageLinkClassChange', this.rebuild,this);
@@ -1910,8 +1971,8 @@ Paginator.ATTRS.pageLabelBuilder =
  * @static
  * @method calculateRange
  * @param {int} currentPage  The current page
- * @param {int} totalPages   (optional) Maximum number of pages
- * @param {int} numPages     (optional) Preferred number of pages in range
+ * @param {int} [totalPages] Maximum number of pages
+ * @param {int} [numPages]   Preferred number of pages in range
  * @return {Array} [start_page_number, end_page_number]
  */
 Paginator.ui.PageLinks.calculateRange = function (currentPage,totalPages,numPages) {
@@ -1985,6 +2046,10 @@ Paginator.ui.PageLinks.prototype = {
      */
     render : function (id_base) {
 
+        if (this.container) {
+            this.container.remove(true);
+        }
+
         // Set up container
         this.container = Y.Node.create(
             '<span id="'+id_base+'-pages"></span>');
@@ -2019,19 +2084,23 @@ Paginator.ui.PageLinks.prototype = {
                 start        = range[0],
                 end          = range[1],
                 content      = '',
-                linkTemplate,i;
+                disabled     = p.get('disabled'),
+                i;
 
-            linkTemplate = '<a href="#" class="' + p.get('pageLinkClass') +
-                           '" page="';
             for (i = start; i <= end; ++i) {
                 if (i === currentPage) {
                     content +=
                         '<span class="' + p.get('currentPageClass') + ' ' +
                                           p.get('pageLinkClass') + '">' +
                         labelBuilder(i,p) + '</span>';
+                } else if (disabled) {
+                    content +=
+                        '<span class="' + p.get('pageLinkClass') +
+                           ' disabled" page="' + i + '">' + labelBuilder(i,p) + '</span>';
                 } else {
                     content +=
-                        linkTemplate + i + '">' + labelBuilder(i,p) + '</a>';
+                        '<a href="#" class="' + p.get('pageLinkClass') +
+                           '" page="' + i + '">' + labelBuilder(i,p) + '</a>';
                 }
             }
 
@@ -2075,9 +2144,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to generate the link to jump to the previous page.
  *
- * @module gallery-paginator
  * @class Paginator.ui.PreviousPageLink
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -2089,6 +2161,7 @@ Paginator.ui.PreviousPageLink = function (p) {
     p.after('recordOffsetChange',this.update,this);
     p.after('rowsPerPageChange',this.update,this);
     p.after('totalRecordsChange',this.update,this);
+    p.after('disabledChange',this.update,this);
 
     p.after('previousPageLinkLabelChange',this.update,this);
     p.after('previousPageLinkClassChange',this.update,this);
@@ -2166,6 +2239,11 @@ Paginator.ui.PreviousPageLink.prototype = {
             c     = p.get('previousPageLinkClass'),
             label = p.get('previousPageLinkLabel');
 
+        if (this.link) {
+            this.link.remove(true);
+            this.span.remove(true);
+        }
+
         this.link= Y.Node.create(
             '<a href="#" id="'+id_base+'-prev-link">'+label+'</a>');
         this.link.set('className', c);
@@ -2190,7 +2268,7 @@ Paginator.ui.PreviousPageLink.prototype = {
         }
 
         var par = this.current ? this.current.get('parentNode') : null;
-        if (this.paginator.getCurrentPage() > 1) {
+        if (this.paginator.getCurrentPage() > 1 && !this.paginator.get('disabled')) {
             if (par && this.current === this.span) {
                 par.replaceChild(this.link,this.current);
                 this.current = this.link;
@@ -2220,9 +2298,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to generate the rows-per-page dropdown
  *
- * @module gallery-paginator
  * @class Paginator.ui.RowsPerPageDropdown
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -2233,6 +2314,7 @@ Paginator.ui.RowsPerPageDropdown = function (p) {
     p.on('destroy',this.destroy,this);
     p.after('rowsPerPageChange',this.update,this);
     p.after('totalRecordsChange',this._handleTotalRecordsChange,this);
+    p.after('disabledChange',this.update,this);
 
     p.after('rowsPerPageDropdownClassChange',this.rebuild,this);
     p.after('rowsPerPageDropdownTitleChange',this.rebuild,this);
@@ -2301,7 +2383,7 @@ Paginator.ui.RowsPerPageDropdown.prototype = {
      * @private
      */
     destroy : function () {
-        this.select.remove(true);
+        this.select.remove().destroy(true);
         this.all = this.select = null;
     },
 
@@ -2312,6 +2394,10 @@ Paginator.ui.RowsPerPageDropdown.prototype = {
      * @return {HTMLElement}
      */
     render : function (id_base) {
+        if (this.select) {
+            this.select.remove().destroy(true);
+        }
+
         this.select = Y.Node.create(
             '<select id="'+id_base+'-rpp"></select>');
         this.select.on('change',this.onChange,this);
@@ -2353,7 +2439,7 @@ Paginator.ui.RowsPerPageDropdown.prototype = {
         }
 
         while (opts.length > options.length) {
-            sel.get('lastChild').remove();
+            sel.get('lastChild').remove(true);
         }
 
         this.update();
@@ -2379,6 +2465,8 @@ Paginator.ui.RowsPerPageDropdown.prototype = {
                 break;
             }
         }
+
+        this.select.set('disabled', this.paginator.get('disabled'));
     },
 
     /**
@@ -2410,10 +2498,13 @@ Paginator.ui.RowsPerPageDropdown.prototype = {
         }
     }
 };
+/**
+ * @module gallery-paginator
+ */
+
 /**********************************************************************
  * Adds per-page error notification to Paginator.ui.PageLinks.
  *
- * @module gallery-paginator
  * @class Paginator.ui.ValidationPageLinks
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -2424,7 +2515,7 @@ Paginator.ui.ValidationPageLinks = function(
 {
 	Paginator.ui.ValidationPageLinks.superclass.constructor.call(this, p);
 
-    p.after('pageStatusChange', this.rebuild, this);
+	p.after('pageStatusChange', this.rebuild, this);
 };
 
 var vpl_status_prefix = 'yui3-has';
@@ -2433,7 +2524,7 @@ var vpl_status_prefix = 'yui3-has';
  * Array of status strings for each page.  If the status value for a page
  * is not empty, it is used to build a CSS class for the page:
  * yui3-has&lt;status&gt;
- * 
+ *
  * @attribute pageStatus
  */
 Paginator.ATTRS.pageStatus =
@@ -2442,8 +2533,8 @@ Paginator.ATTRS.pageStatus =
 	validator: Y.Lang.isArray
 };
 
-Y.extend(Paginator.ui.ValidationPageLinks, Paginator.ui.PageLinks, 
-{ 
+Y.extend(Paginator.ui.ValidationPageLinks, Paginator.ui.PageLinks,
+{
 	update: function(e)
 	{
 		if (e && e.prevVal === e.newVal)
@@ -2455,12 +2546,14 @@ Y.extend(Paginator.ui.ValidationPageLinks, Paginator.ui.PageLinks,
 
 		var curr_markup = '<span class="{link} {curr} {status}">{label}</span>';
 		var link_markup = '<a href="#" class="{link} {status}" page="{page}">{label}</a>';
+		var dis_markup  = '<span class="{link} disabled {status}" page="{page}">{label}</span>';
 
 		if (this.current !== currentPage || !currentPage || e.rebuild)
 		{
-			var linkClass    = this.paginator.get('pageLinkClass');
-			var status       = this.paginator.get('pageStatus');
-			var labelBuilder = this.paginator.get('pageLabelBuilder');
+			var linkClass    = this.paginator.get('pageLinkClass'),
+				status       = this.paginator.get('pageStatus'),
+				labelBuilder = this.paginator.get('pageLabelBuilder'),
+				disabled     = this.paginator.get('disabled');
 
 			var range =
 				Paginator.ui.PageLinks.calculateRange(
@@ -2469,7 +2562,7 @@ Y.extend(Paginator.ui.ValidationPageLinks, Paginator.ui.PageLinks,
 			var content = '';
 			for (var i=range[0]; i<=range[1]; i++)
 			{
-				content += Y.Lang.sub(i === currentPage ? curr_markup : link_markup,
+				content += Y.Lang.sub(i === currentPage ? curr_markup : disabled ? dis_markup : link_markup,
 				{
 					link:   linkClass,
 					curr:   (i === currentPage ? this.paginator.get('currentPageClass') : ''),
@@ -2482,8 +2575,8 @@ Y.extend(Paginator.ui.ValidationPageLinks, Paginator.ui.PageLinks,
 			this.container.set('innerHTML', content);
 		}
 	}
-	
+
 });
 
 
-}, 'gallery-2011.04.13-22-38' ,{requires:['widget','event-key','substitute'], skinnable:true});
+}, 'gallery-2012.09.26-20-36' ,{skinnable:true, requires:['widget','event-key','substitute']});

@@ -5,9 +5,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to generate the rows-per-page dropdown
  *
- * @module gallery-paginator
  * @class Paginator.ui.RowsPerPageDropdown
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -18,6 +21,7 @@ Paginator.ui.RowsPerPageDropdown = function (p) {
     p.on('destroy',this.destroy,this);
     p.after('rowsPerPageChange',this.update,this);
     p.after('totalRecordsChange',this._handleTotalRecordsChange,this);
+    p.after('disabledChange',this.update,this);
 
     p.after('rowsPerPageDropdownClassChange',this.rebuild,this);
     p.after('rowsPerPageDropdownTitleChange',this.rebuild,this);
@@ -86,7 +90,7 @@ Paginator.ui.RowsPerPageDropdown.prototype = {
      * @private
      */
     destroy : function () {
-        this.select.remove(true);
+        this.select.remove().destroy(true);
         this.all = this.select = null;
     },
 
@@ -97,6 +101,10 @@ Paginator.ui.RowsPerPageDropdown.prototype = {
      * @return {HTMLElement}
      */
     render : function (id_base) {
+        if (this.select) {
+            this.select.remove().destroy(true);
+        }
+
         this.select = Y.Node.create(
             '<select id="'+id_base+'-rpp"></select>');
         this.select.on('change',this.onChange,this);
@@ -138,7 +146,7 @@ Paginator.ui.RowsPerPageDropdown.prototype = {
         }
 
         while (opts.length > options.length) {
-            sel.get('lastChild').remove();
+            sel.get('lastChild').remove(true);
         }
 
         this.update();
@@ -164,6 +172,8 @@ Paginator.ui.RowsPerPageDropdown.prototype = {
                 break;
             }
         }
+
+        this.select.set('disabled', this.paginator.get('disabled'));
     },
 
     /**

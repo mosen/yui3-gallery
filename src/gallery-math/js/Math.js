@@ -1,57 +1,71 @@
 "use strict";
 
+/**
+ * @module gallery-math
+ */
+
 /**********************************************************************
  * <p>Augments built-in JavaScript Math namespace with additional
  * mathematical functions.</p>
  * 
- * @module gallery-math
+ * @main gallery-math
  * @class Math
  */
 
 Y.mix(Math,
 {
 	/**
-	 * @return {number} sum of all the arguments (either passed separately or as an array)
+	 * @method sign
+	 * @static
+	 * @return {Number} +1 if value > 0, -1 if value < 0, else zero
+	 */
+	sign: function(v)
+	{
+		return (v < 0 ? -1 : (v > 0 ? +1 : 0));
+	},
+
+	/**
+	 * @method add
+	 * @static
+	 * @return {Number} sum of all the arguments (either passed separately or as an array)
 	 */
 	add: function()
 	{
-		var s = 0;
-		Y.Array.each(arguments, function(v)
+		return Y.Array.reduce(Y.Array(arguments), 0, function(s, v)
 		{
 			if (Y.Lang.isArray(v))
 			{
 				v = Math.add.apply(this, v);
 			}
 
-			s += v;
+			return s + v;
 		});
-
-		return s;
 	},
 
 	/**
-	 * @return {number} sum of the reciprocals of all the arguments (either passed separately or as an array)
+	 * @method addReciprocals
+	 * @static
+	 * @return {Number} sum of the reciprocals of all the arguments (either passed separately or as an array)
 	 */
 	addReciprocals: function()
 	{
-		var s = 0;
-		Y.Array.each(arguments, function(v)
+		return Y.Array.reduce(Y.Array(arguments), 0, function(s, v)
 		{
 			if (Y.Lang.isArray(v))
 			{
-				s += Math.addReciprocals.apply(this, v);
+				return s + Math.addReciprocals.apply(this, v);
 			}
 			else
 			{
-				s += 1/v;
+				return s + 1/v;
 			}
 		});
-
-		return s;
 	},
 
 	/**
-	 * @return {number} net value of N resistors in parallel (either passed separately or as an array)
+	 * @method parallel
+	 * @static
+	 * @return {Number} net value of N resistors in parallel (either passed separately or as an array)
 	 */
 	parallel: function()
 	{
@@ -59,27 +73,28 @@ Y.mix(Math,
 	},
 
 	/**
-	 * @return {number} product of all the arguments (either passed separately or as an array)
+	 * @method multiply
+	 * @static
+	 * @return {Number} product of all the arguments (either passed separately or as an array)
 	 */
 	multiply: function()
 	{
-		var p = 1;
-		Y.Array.each(arguments, function(v)
+		return Y.Array.reduce(Y.Array(arguments), 1, function(p, v)
 		{
 			if (Y.Lang.isArray(v))
 			{
 				v = Math.multiply.apply(this, v);
 			}
 
-			p *= v;
+			return p * v;
 		});
-
-		return p;
 	},
 
 	/**
-	 * @param a {number} angle in degrees
-	 * @return {number} angle in radians
+	 * @method degreesToRadians
+	 * @static
+	 * @param a {Number} angle in degrees
+	 * @return {Number} angle in radians
 	 */
 	degreesToRadians: function(a)
 	{
@@ -87,8 +102,10 @@ Y.mix(Math,
 	},
 
 	/**
-	 * @param a {number} angle in radians
-	 * @return {number} angle in degrees
+	 * @method radiansToDegrees
+	 * @static
+	 * @param a {Number} angle in radians
+	 * @return {Number} angle in degrees
 	 */
 	radiansToDegrees: function(a)
 	{
@@ -96,8 +113,10 @@ Y.mix(Math,
 	},
 
 	/**
-	 * @param v {number}
-	 * @return {number} inverse hyperbolic cosine
+	 * @method acosh
+	 * @static
+	 * @param v {Number}
+	 * @return {Number} inverse hyperbolic cosine
 	 */
 	acosh: function(v)
 	{
@@ -105,8 +124,10 @@ Y.mix(Math,
 	},
 
 	/**
-	 * @param v {number}
-	 * @return {number} inverse hyperbolic sine
+	 * @method asinh
+	 * @static
+	 * @param v {Number}
+	 * @return {Number} inverse hyperbolic sine
 	 */
 	asinh: function(v)
 	{
@@ -114,8 +135,10 @@ Y.mix(Math,
 	},
 
 	/**
-	 * @param v {number}
-	 * @return {number} inverse hyperbolic tangent
+	 * @method atanh
+	 * @static
+	 * @param v {Number}
+	 * @return {Number} inverse hyperbolic tangent
 	 */
 	atanh: function(v)
 	{
@@ -123,8 +146,10 @@ Y.mix(Math,
 	},
 
 	/**
-	 * @param v {number}
-	 * @return {number} hyperbolic cosine
+	 * @method cosh
+	 * @static
+	 * @param v {Number}
+	 * @return {Number} hyperbolic cosine
 	 */
 	cosh: function(v)
 	{
@@ -133,8 +158,10 @@ Y.mix(Math,
 	},
 
 	/**
-	 * @param v {number}
-	 * @return {number} hyperbolic sine
+	 * @method sinh
+	 * @static
+	 * @param v {Number}
+	 * @return {Number} hyperbolic sine
 	 */
 	sinh: function(v)
 	{
@@ -143,8 +170,10 @@ Y.mix(Math,
 	},
 
 	/**
-	 * @param v {number}
-	 * @return {number} hyperbolic sine
+	 * @method tanh
+	 * @static
+	 * @param v {Number}
+	 * @return {Number} hyperbolic sine
 	 */
 	tanh: function(v)
 	{

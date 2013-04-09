@@ -6,9 +6,13 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
- * The Paginator widget provides a set of controls to navigate through paged
- * data.
- *
+ * The Paginator widget provides a set of controls to navigate through
+ * paged data.
+ * 
+ * @module gallery-paginator
+ */
+
+/**
  * To instantiate a Paginator, pass a configuration object to the contructor.
  * The configuration object should contain the following properties:
  * <ul>
@@ -16,8 +20,8 @@ http://developer.yahoo.net/yui/license.txt
  *   <li>totalRecords : <em>n</em> (int or Paginator.VALUE_UNLIMITED)</li>
  * </ul>
  *
- * @module gallery-paginator
  * @class Paginator
+ * @extends Widget
  * @constructor
  * @param config {Object} Object literal to set instance and ui component
  * configuration.
@@ -83,7 +87,7 @@ Y.mix(Paginator, {
      *
      * @method Paginator.isNumeric
      * @param v {Number|String} value to be checked for number or numeric string
-     * @returns {Boolean} true if the input is coercable into a finite number
+     * @return {Boolean} true if the input is coercable into a finite number
      * @static
      */
     isNumeric : function (v) {
@@ -389,7 +393,7 @@ Y.extend(Paginator, Y.Widget,
      */
     updateVisibility : function (e) {
         var alwaysVisible = this.get('alwaysVisible'),
-            totalRecords,visible,rpp,rppOptions,i,len;
+            totalRecords,visible,rpp,rppOptions,i,len,rppOption,rppValue;
 
         if (!e || e.type === 'alwaysVisibleChange' || !alwaysVisible) {
             totalRecords = this.get('totalRecords');
@@ -399,7 +403,9 @@ Y.extend(Paginator, Y.Widget,
 
             if (Y.Lang.isArray(rppOptions)) {
                 for (i = 0, len = rppOptions.length; i < len; ++i) {
-                    rpp = Math.min(rpp,rppOptions[i]);
+                    rppOption = rppOptions[i];
+                    rppValue  = Y.Lang.isValue(rppOption.value) ? rppOption.value : rppOption;
+                    rpp       = Math.min(rpp,rppValue);
                 }
             }
 
@@ -509,7 +515,7 @@ Y.extend(Paginator, Y.Widget,
     /**
      * Get the start and end record indexes of the specified page.
      * @method getPageRecords
-     * @param page {number} (optional) The page (current page if not specified)
+     * @param [page] {number} The page (current page if not specified)
      * @return {Array} [start_index, end_index]
      */
     getPageRecords : function (page) {
@@ -765,7 +771,7 @@ Y.extend(Paginator, Y.Widget,
             this._pageChanged = false;
 
             for (var k in state) {
-                if (state.hasOwnProperty(k) && this._configs.hasOwnProperty(k)) {
+                if (state.hasOwnProperty(k)) {
                     this.set(k,state[k]);
                 }
             }

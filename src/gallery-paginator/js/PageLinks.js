@@ -5,9 +5,12 @@ http://developer.yahoo.net/yui/license.txt
 */
 
 /**
+ * @module gallery-paginator
+ */
+
+/**
  * ui Component to generate the page links
  *
- * @module gallery-paginator
  * @class Paginator.ui.PageLinks
  * @constructor
  * @param p {Pagintor} Paginator instance to attach to
@@ -19,6 +22,7 @@ Paginator.ui.PageLinks = function (p) {
     p.after('recordOffsetChange',this.update,this);
     p.after('rowsPerPageChange',this.update,this);
     p.after('totalRecordsChange',this.update,this);
+    p.after('disabledChange',this.update,this);
 
     p.after('pageLinksContainerClassChange', this.rebuild,this);
     p.after('pageLinkClassChange', this.rebuild,this);
@@ -89,8 +93,8 @@ Paginator.ATTRS.pageLabelBuilder =
  * @static
  * @method calculateRange
  * @param {int} currentPage  The current page
- * @param {int} totalPages   (optional) Maximum number of pages
- * @param {int} numPages     (optional) Preferred number of pages in range
+ * @param {int} [totalPages] Maximum number of pages
+ * @param {int} [numPages]   Preferred number of pages in range
  * @return {Array} [start_page_number, end_page_number]
  */
 Paginator.ui.PageLinks.calculateRange = function (currentPage,totalPages,numPages) {
@@ -164,6 +168,10 @@ Paginator.ui.PageLinks.prototype = {
      */
     render : function (id_base) {
 
+        if (this.container) {
+            this.container.remove(true);
+        }
+
         // Set up container
         this.container = Y.Node.create(
             '<span id="'+id_base+'-pages"></span>');
@@ -198,19 +206,23 @@ Paginator.ui.PageLinks.prototype = {
                 start        = range[0],
                 end          = range[1],
                 content      = '',
-                linkTemplate,i;
+                disabled     = p.get('disabled'),
+                i;
 
-            linkTemplate = '<a href="#" class="' + p.get('pageLinkClass') +
-                           '" page="';
             for (i = start; i <= end; ++i) {
                 if (i === currentPage) {
                     content +=
                         '<span class="' + p.get('currentPageClass') + ' ' +
                                           p.get('pageLinkClass') + '">' +
                         labelBuilder(i,p) + '</span>';
+                } else if (disabled) {
+                    content +=
+                        '<span class="' + p.get('pageLinkClass') +
+                           ' disabled" page="' + i + '">' + labelBuilder(i,p) + '</span>';
                 } else {
                     content +=
-                        linkTemplate + i + '">' + labelBuilder(i,p) + '</a>';
+                        '<a href="#" class="' + p.get('pageLinkClass') +
+                           '" page="' + i + '">' + labelBuilder(i,p) + '</a>';
                 }
             }
 

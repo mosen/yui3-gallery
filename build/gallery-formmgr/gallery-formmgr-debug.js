@@ -1,4 +1,4 @@
-YUI.add('gallery-formmgr', function(Y) {
+YUI.add('gallery-formmgr', function (Y, NAME) {
 
 "use strict";
 
@@ -8,6 +8,11 @@ YUI.add('gallery-formmgr', function(Y) {
  * 
  * <p>Also see the documentation for gallery-formmgr-css-validation.</p>
  * 
+ * @module gallery-formmgr
+ * @main gallery-formmgr
+ */
+
+/**
  * <p><strong>Required Markup Structure</strong></p>
  * 
  * <p>Each element (or tighly coupled set of elements) must be contained by
@@ -51,22 +56,22 @@ YUI.add('gallery-formmgr', function(Y) {
  * <p>The following classes can be applied to a form element for
  * pre-validation:</p>
  *
- *	<dl>
- *	<dt><code>yiv-required</code></dt>
- *		<dd>Value must not be empty.</dd>
+ * <dl>
+ * <dt><code>yiv-required</code></dt>
+ * <dd>Value must not be empty.</dd>
  *
- *	<dt><code>yiv-length:[x,y]</code></dt>
- *		<dd>String must be at least x characters and at most y characters.
- *		At least one of x and y must be specified.</dd>
+ * <dt><code>yiv-length:[x,y]</code></dt>
+ * <dd>String must be at least x characters and at most y characters.
+ * At least one of x and y must be specified.</dd>
  *
- *	<dt><code>yiv-integer:[x,y]</code></dt>
- *		<dd>The integer value must be at least x and at most y.
- *		x and y are both optional.</dd>
+ * <dt><code>yiv-integer:[x,y]</code></dt>
+ * <dd>The integer value must be at least x and at most y.
+ * x and y are both optional.</dd>
  *
- *	<dt><code>yiv-decimal:[x,y]</code></dt>
- *		<dd>The decimal value must be at least x and at most y.  Exponents are
- *		not allowed.  x and y are both optional.</dd>
- *	</dl>
+ * <dt><code>yiv-decimal:[x,y]</code></dt>
+ * <dd>The decimal value must be at least x and at most y.  Exponents are
+ * not allowed.  x and y are both optional.</dd>
+ * </dl>
  *
  * <p>If we ever need to allow exponents, we can use yiv-float.</p>
  *
@@ -75,13 +80,13 @@ YUI.add('gallery-formmgr', function(Y) {
  *
  * <dl>
  * <dt><code>setRegex()</code></dt>
- *		<dd>Sets the regular expression that must match in order for the value
- *		to be acceptable.</dd>
+ * <dd>Sets the regular expression that must match in order for the value
+ * to be acceptable.</dd>
  *
  * <dt><code>setFunction()</code></dt>
- *		<dd>Sets the function that must return true in order for the value to
- *		be acceptable.  The function is called in the scope of the Form
- *		object with the arguments:  the form and the element.</dd>
+ * <dd>Sets the function that must return true in order for the value to
+ * be acceptable.  The function is called in the scope of the Form
+ * object with the arguments:  the form and the element.</dd>
  * </dl>
  *
  * <p><code>setErrorMessages()</code> specifies the error message to be
@@ -93,23 +98,26 @@ YUI.add('gallery-formmgr', function(Y) {
  * <p>More complex pre-validations can be added by overriding
  * <code>postValidateForm()</code>, described below.</p>
  *
+ * <p>Validation normally strips leading and trailing whitespace from every
+ * value.  If you have a special case where this should not be done, add
+ * the CSS class <code>yiv-no-trim</code> to the input field.</p>
+ *
  * <p>Derived classes may also override the following functions:</p>
  *
  * <dl>
  * <dt><code>prePrepareForm</code>(arguments passed to prepareForm)</dt>
- *		<dd>Called before filling in default values for the form elements.
- *		Return false to cancel dialog.</dd>
+ * <dd>Called before filling in default values for the form elements.
+ * Return false to cancel dialog.</dd>
  *
  * <dt><code>postPrepareForm</code>(arguments passed to prepareForm)</dt>
- *		<dd>Called after filling in default values for the form elements.</dd>
+ * <dd>Called after filling in default values for the form elements.</dd>
  *
  * <dt><code>postValidateForm</code>(form)</dt>
- *		<dd>Called after performing the basic pre-validations.  Returns
- *		true if the form contents are acceptable.  Reports error if there
- *		is a problem.</dd>
+ * <dd>Called after performing the basic pre-validations.  Returns
+ * true if the form contents are acceptable.  Reports error if there
+ * is a problem.</dd>
  * </dl>
  *
- * @module gallery-formmgr
  * @class FormManager
  * @constructor
  * @param form_name {String} The name attribute of the HTML form.
@@ -125,15 +133,8 @@ function FormManager(
 	/* string */	form_name,
 	/* object */	config)		// {status_node, default_value_map}
 {
-	if (arguments.length === 0)	// derived class prototype
-	{
-		return;
-	}
-
-	if (!config)
-	{
-		config = {};
-	}
+	config = config || {};
+	FormManager.superclass.constructor.call(this, config);
 
 	this.form_name   = form_name;
 	this.status_node = Y.one(config.status_node);
@@ -168,16 +169,11 @@ function FormManager(
 	this.has_file_inputs = false;
 }
 
-// CSS class pattern bookends
-
-var class_re_prefix = '(?:^|\\s)(?:';
-var class_re_suffix = ')(?:\\s|$)';
-
 /**
  * The CSS class which marks each row of the form.  Typically, each field
  * (or a very tightly coupled set of fields) is placed in a separate row.
  * 
- * @property Y.FormManager.row_marker_class
+ * @property row_marker_class
  * @type {String}
  */
 FormManager.row_marker_class = 'formmgr-row';
@@ -186,7 +182,7 @@ FormManager.row_marker_class = 'formmgr-row';
  * The CSS class which marks each field in a row of the form.  This enables
  * messaging when multiple fields are in a single row.
  * 
- * @property Y.FormManager.field_marker_class
+ * @property field_marker_class
  * @type {String}
  */
 FormManager.field_marker_class = 'formmgr-field';
@@ -195,7 +191,7 @@ FormManager.field_marker_class = 'formmgr-field';
  * The CSS class which marks the container for the status message within a
  * row of the form.
  * 
- * @property Y.FormManager.status_marker_class
+ * @property status_marker_class
  * @type {String}
  */
 FormManager.status_marker_class = 'formmgr-message-text';
@@ -203,7 +199,7 @@ FormManager.status_marker_class = 'formmgr-message-text';
 /**
  * The CSS class placed on <code>status_node</code> when it is empty.
  * 
- * @property Y.FormManager.status_none_class
+ * @property status_none_class
  * @type {String}
  */
 FormManager.status_none_class = 'formmgr-status-hidden';
@@ -213,7 +209,7 @@ FormManager.status_none_class = 'formmgr-status-hidden';
  * <code>displayFormMessage()</code> is called with
  * <code>error=false</code>.
  * 
- * @property Y.FormManager.status_success_class
+ * @property status_success_class
  * @type {String}
  */
 FormManager.status_success_class = 'formmgr-status-success';
@@ -223,7 +219,7 @@ FormManager.status_success_class = 'formmgr-status-success';
  * <code>displayFormMessage()</code> is called with
  * <code>error=true</code>.
  * 
- * @property Y.FormManager.status_failure_class
+ * @property status_failure_class
  * @type {String}
  */
 FormManager.status_failure_class = 'formmgr-status-failure';
@@ -231,9 +227,9 @@ FormManager.status_failure_class = 'formmgr-status-failure';
 /**
  * The prefix for all CSS classes placed on a form row when pre-validation
  * fails.  The full CSS class is formed by appending the value from
- * <code>Y.FormManager.status_order</code>.
+ * `Y.FormManager.status_order`.
  * 
- * @property Y.FormManager.row_status_prefix
+ * @property row_status_prefix
  * @type {String}
  */
 FormManager.row_status_prefix = 'formmgr-has';
@@ -267,72 +263,15 @@ function rowStatusRegex()
 {
 	if (!cached_row_status_regex)
 	{
-		cached_row_status_regex = new RegExp(class_re_prefix + rowStatusPattern() + class_re_suffix);
+		cached_row_status_regex = new RegExp(Y.Node.class_re_prefix + rowStatusPattern() + Y.Node.class_re_suffix);
 	}
 	return cached_row_status_regex;
 }
 
 /**
- * <p>Names of supported status values, highest precedence first.  Default:
- * <code>[ 'error', 'warn', 'success', 'info' ]</code></p>
- * 
- * <p>This is static because it links to CSS rules that define the
- * appearance of each status type:  .formmgr-has{status}</p>
- * 
- * @config Y.FormManager.status_order
- * @type {Array}
- * @static
- */
-FormManager.status_order =
-[
-	'error',
-	'warn',
-	'success',
-	'info'
-];
-
-/**
- * Get the precedence of the given status name.
- * 
- * @method Y.FormManager.getStatusPrecedence
- * @static
- * @param status {String} The name of the status value.
- * @return {int} The position in the <code>status_order</code> array.
- */
-FormManager.getStatusPrecedence = function(
-	/* string */	status)
-{
-	for (var i=0; i<FormManager.status_order.length; i++)
-	{
-		if (status == FormManager.status_order[i])
-		{
-			return i;
-		}
-	}
-
-	return FormManager.status_order.length;
-};
-
-/**
- * Compare two status values.
- * 
- * @method Y.FormManager.statusTakesPrecendence
- * @static
- * @param orig_status {String} The name of the original status value.
- * @param new_status {String} The name of the new status value.
- * @return {boolean} <code>true</code> if <code>new_status</code> takes precedence over <code>orig_status</code>
- */
-FormManager.statusTakesPrecendence = function(
-	/* string */	orig_status,
-	/* string */	new_status)
-{
-	return (!orig_status || FormManager.getStatusPrecedence(new_status) < FormManager.getStatusPrecedence(orig_status));
-};
-
-/**
  * Get the status of the given fieldset or form row.
  * 
- * @method Y.FormManager.getElementStatus
+ * @method getElementStatus
  * @static
  * @param e {String|Object} The descriptor or DOM element.
  * @return {mixed} The status (String) or <code>false</code>.
@@ -351,7 +290,7 @@ function getId(
 	{
 		return e.replace(/^#/, '');
 	}
-	else if (e instanceof Y.Node)
+	else if (e._node)
 	{
 		return e.get('id');
 	}
@@ -361,40 +300,7 @@ function getId(
 	}
 }
 
-/**
- * Trim leading and trailing whitespace from the specified fields.
- * 
- * @method Y.FormManager.cleanValues
- * @static
- * @param e {Array|NodeList} The fields to clean.
- * @return {boolean} <code>true</code> if there are any file inputs.
- */
-FormManager.cleanValues = function(
-	/* array */	e)
-{
-	var has_file_inputs = false;
-	for (var i=0; i<e.length; i++)
-	{
-		var input = e[i];
-		var type  = input.type && input.type.toLowerCase();
-		if (type == 'file')
-		{
-			has_file_inputs = true;
-		}
-		else if (type == 'select-multiple')
-		{
-			// don't change the value
-		}
-		else if (input.value)
-		{
-			input.value = Y.Lang.trim(input.value);
-		}
-	}
-
-	return has_file_inputs;
-};
-
-function populateForm1()
+function _populateForm()
 {
 	var collect_buttons = (this.button_list.length === 0);
 
@@ -486,13 +392,167 @@ function populateForm1()
 	}
 }
 
-FormManager.prototype =
+function _isChanged(i)
+{
+	var e = this.form.elements[i];
+	if (!e.name)
+	{
+		return false;
+	}
+
+	var type = (e.type ? e.type.toLowerCase() : null);
+	var name = e.tagName.toLowerCase();
+	var v    = this.default_value_map[ e.name ];
+	if (v === null || typeof v === 'undefined')
+	{
+		v = '';
+	}
+
+	if (name == 'input' && type == 'file')
+	{
+		if (e.value)
+		{
+			return true;
+		}
+	}
+	else if (name == 'input' &&
+			 (type == 'password' || type == 'text' || type == 'file'))
+	{
+		if (e.value != v)
+		{
+			return true;
+		}
+	}
+	else if (name == 'input' &&
+			 (type == 'checkbox' || type == 'radio'))
+	{
+		var checked = (e.value == v);
+		if ((checked && !e.checked) || (!checked && e.checked))
+		{
+			return true;
+		}
+	}
+	else if ((name == 'select' && type == 'select-one') ||
+			 name == 'textarea')
+	{
+		if (e.value != v)
+		{
+			return true;
+		}
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/**
+ * <p>Exposed for use by Y.QueryBuilder</p>
+ * 
+ * <p>Clear the message for the given field.</p>
+ * 
+ * @method clearMessage
+ * @static
+ * @param e {Element|Node} the field
+ */
+FormManager.clearMessage = function(e)
+{
+	var p = Y.one(e).getAncestorByClassName(Y.FormManager.row_marker_class);
+	if (p && p.hasClass(rowStatusPattern()))
+	{
+		p.all('.'+Y.FormManager.status_marker_class).set('innerHTML', '');
+		p.removeClass(rowStatusPattern());
+
+		p.all('.'+Y.FormManager.field_marker_class).removeClass(rowStatusPattern());
+	}
+};
+
+/**
+ * <p>Exposed for use by Y.QueryBuilder</p>
+ * 
+ * <p>Display a message for the form row containing the specified element.
+ * The message will only be displayed if no message with a higher
+ * precedence is already visible. (see Y.FormManager.status_order)</p>
+ * 
+ * @method displayMessage
+ * @static
+ * @param e {String|Object} The selector for the element or the element itself
+ * @param msg {String} The message
+ * @param type {String} The message type (see Y.FormManager.status_order)
+ * @param [had_messages] {boolean} `true` if the form already has messages displayed
+ * @param [scroll] {boolean} `true` if the form row should be scrolled into view
+ * @return {boolean} true if the message was displayed, false if a higher precedence message was already there
+ */
+FormManager.displayMessage = function(
+	/* id/object */	e,
+	/* string */	msg,
+	/* string */	type,
+	/* boolean */	had_messages,
+	/* boolean */	scroll)
+{
+	if (Y.Lang.isUndefined(scroll))
+	{
+		scroll = !had_messages;
+	}
+
+	e     = Y.one(e);
+	var p = e.getAncestorByClassName(FormManager.row_marker_class);
+	if (p && FormManager.statusTakesPrecedence(FormManager.getElementStatus(p), type))
+	{
+		var f = p.all('.'+FormManager.field_marker_class);
+		if (f)
+		{
+			f.removeClass(rowStatusPattern());
+		}
+
+		if (msg)
+		{
+			p.one('.'+FormManager.status_marker_class).set('innerHTML', msg);
+		}
+
+		var new_class = FormManager.row_status_prefix + type;
+		p.replaceClass(rowStatusPattern(), new_class);
+
+		f = e.getAncestorByClassName(FormManager.field_marker_class, true);
+		if (f)
+		{
+			f.replaceClass(rowStatusPattern(), new_class);
+		}
+
+		var fieldset = e.getAncestorByTagName('fieldset');
+		if (fieldset && FormManager.statusTakesPrecedence(FormManager.getElementStatus(fieldset), type))
+		{
+			fieldset.removeClass(rowStatusPattern());
+			fieldset.addClass(FormManager.row_status_prefix + type);
+		}
+
+		if (scroll && e.get('offsetHeight') !== 0)
+		{
+			p.scrollIntoView();
+			try
+			{
+				e.focus();
+			}
+			catch (ex)
+			{
+				// no way to determine in IE if this will fail
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+};
+
+Y.extend(FormManager, Y.Plugin.Host,
 {
 	/* *********************************************************************
 	 * Access functions.
 	 */
 
 	/**
+	 * @method getForm
 	 * @return {DOM} The form DOM element.
 	 */
 	getForm: function()
@@ -505,6 +565,7 @@ FormManager.prototype =
 	},
 
 	/**
+	 * @method hasFileInputs
 	 * @return {boolean} <code>true</code> if the form contains file inputs.  These require special treatment when submitting via XHR.
 	 */
 	hasFileInputs: function()
@@ -513,19 +574,36 @@ FormManager.prototype =
 	},
 
 	/**
+	 * @method setStatusNode
+	 * @param node {String|Y.Node} the node in which status should be displayed
+	 */
+	setStatusNode: function(
+		/* Node */	node)
+	{
+		this.status_node = Y.one(node);
+	},
+
+	/**
 	 * Set the default values for all form elements.
 	 * 
-	 * @param default_value_map {Object} Mapping of form element names to values.
+	 * @method setDefaultValues
+	 * @param default_value_map {Object|Model} Mapping of form element names to values.
 	 */
 	setDefaultValues: function(
-		/* object */	default_value_map)
+		/* object */	map)
 	{
-		this.default_value_map = default_value_map;
+		if (Y.Model && (map instanceof Y.Model))
+		{
+			map = map.getAttrs();
+		}
+
+		this.default_value_map = map;
 	},
 
 	/**
 	 * Set the default values for a single form element.
 	 * 
+	 * @method setDefaultValue
 	 * @param field_name {String} The form element name.
 	 * @param default_value {String|Int|Float} The default value.
 	 */
@@ -538,12 +616,14 @@ FormManager.prototype =
 
 	/**
 	 * Store the current form values in <code>default_value_map</code>.
+	 * 
+	 * @method saveCurrentValuesAsDefault
 	 */
 	saveCurrentValuesAsDefault: function()
 	{
 		this.default_value_map = {};
 		this.button_list       = [];
-		populateForm1.call(this);
+		_populateForm.call(this);
 	},
 
 	/* *********************************************************************
@@ -553,13 +633,14 @@ FormManager.prototype =
 	/**
 	 * Set the validation function for a form element.
 	 * 
+	 * @method setFunction
 	 * @param id {String|Object} The selector for the element or the element itself
 	 * @param f {Function|String|Object}
-	 *		The function to call after basic validations succeed.  If this
-	 *		is a String, it is resolved in the scope of the FormManager
-	 *		object.  If this is an object, it must be <code>{fn:,
-	 *		scope:}</code>.  The function will then be invoked in the
-	 *		specified scope.
+	 *  The function to call after basic validations succeed.  If this
+	 *  is a String, it is resolved in the scope of the FormManager
+	 *  object.  If this is an object, it must be `{fn:,
+	 *  scope:}`.  The function will then be invoked in the
+	 *  specified scope.
 	 */
 	setFunction: function(
 		/* string */				id,
@@ -573,9 +654,10 @@ FormManager.prototype =
 	 * 
 	 * <p><strong>Since there is no default message for failed regular
 	 * expression validation, this function will complain if you have not
-	 * already called <code>setErrorMessages()</code> or
-	 * <code>addErrorMessage</code> to specify an error message.</strong></p>
+	 * already called `setErrorMessages()` or
+	 * `addErrorMessage` to specify an error message.</strong></p>
 	 * 
+	 * @method setRegex
 	 * @param id {String|Object} The selector for the element or the element itself
 	 * @param regex {String|RegExp} The regular expression to use
 	 * @param flags {String} If regex is a String, these are the flags used to construct a RegExp.
@@ -598,7 +680,7 @@ FormManager.prototype =
 
 		if (!this.validation_msgs[id] || !this.validation_msgs[id].regex)
 		{
-			Y.log(Y.substitute('No error message provided for regex validation of {id}!', {id:id}), 'error', 'FormManager');
+			Y.error(Y.substitute('No error message provided for regex validation of {id}!', {id:id}), null, 'FormManager');
 		}
 	},
 
@@ -607,20 +689,22 @@ FormManager.prototype =
 	 * override the default messages for individual elements</p>
 	 * 
 	 * <p>The valid error types are:</p>
-	 *	<dl>
-	 *	<dt><code>required</code></dt>
-	 *	<dt><code>min_length</code></dt>
-	 *		<dd><code>{min}</code> and <code>{max}</code> are replaced</dd>
-	 *	<dt><code>max_length</code></dt>
-	 *		<dd><code>{min}</code> and <code>{max}</code> are replaced</dd>
-	 *	<dt><code>integer</code></dt>
-	 *		<dd><code>{min}</code> and <code>{max}</code> are replaced</dd>
-	 *	<dt><code>decimal</code></dt>
-	 *		<dd><code>{min}</code> and <code>{max}</code> are replaced</dd>
-	 *	<dt><code>regex</code></dt>
-	 *		<dd>This <string>must</strong> be set for elements which validate with regular expressions.</dd>
-	 *	</dl>
+	 * <dl>
+	 * <dt><code>required</code></dt>
+	 * <dd>&nbsp;</dd>
+	 * <dt><code>min_length</code></dt>
+	 * <dd><code>{min}</code> and <code>{max}</code> are replaced</dd>
+	 * <dt><code>max_length</code></dt>
+	 * <dd><code>{min}</code> and <code>{max}</code> are replaced</dd>
+	 * <dt><code>integer</code></dt>
+	 * <dd><code>{min}</code> and <code>{max}</code> are replaced</dd>
+	 * <dt><code>decimal</code></dt>
+	 * <dd><code>{min}</code> and <code>{max}</code> are replaced</dd>
+	 * <dt><code>regex</code></dt>
+	 * <dd>This <string>must</strong> be set for elements which validate with regular expressions.</dd>
+	 * </dl>
 	 * 
+	 * @method setErrorMessages
 	 * @param id {String|Object} The selector for the element or the element itself
 	 * @param map {Object} Map of error types to error messages.
 	 */
@@ -634,6 +718,7 @@ FormManager.prototype =
 	/**
 	 * Set one particular error message for a form element.
 	 * 
+	 * @method addErrorMessage
 	 * @param id {String|Object} The selector for the element or the element itself
 	 * @param error_type {String} The error message type.  Refer to setErrorMessages() for details.
 	 * @param msg {String} The error message
@@ -653,6 +738,8 @@ FormManager.prototype =
 
 	/**
 	 * Reset all values in the form to the defaults specified in the markup.
+	 * 
+	 * @method clearForm
 	 */
 	clearForm: function()
 	{
@@ -662,7 +749,10 @@ FormManager.prototype =
 	},
 
 	/**
-	 * Reset all values in the form to the defaults passed to the constructor.
+	 * Reset all values in the form to the defaults passed to the
+	 * constructor or to `setDefaultValues()`.
+	 * 
+	 * @method populateForm
 	 */
 	populateForm: function()
 	{
@@ -673,7 +763,7 @@ FormManager.prototype =
 
 		this.clearMessages();
 
-		populateForm1.call(this);
+		_populateForm.call(this);
 
 		// let derived class adjust
 
@@ -681,8 +771,10 @@ FormManager.prototype =
 	},
 
 	/**
-	 * Hook for performing additional actions after
-	 * <code>populateForm()</code> completes.
+	 * Hook for performing additional actions after `populateForm()`
+	 * completes.
+	 * 
+	 * @method postPopulateForm
 	 */
 	postPopulateForm: function()
 	{
@@ -691,57 +783,16 @@ FormManager.prototype =
 	/**
 	 * Check if form values have been modified.
 	 * 
-	 * @return {boolean} <code>false</code> if all form elements have the default values passed to the constructor
+	 * @method isChanged
+	 * @return {boolean} `false` if all form elements have the default values passed to the constructor
 	 */
 	isChanged: function()
 	{
 		for (var i=0; i<this.form.elements.length; i++)
 		{
-			var e = this.form.elements[i];
-			if (!e.name)
+			if (_isChanged.call(this, i))
 			{
-				continue;
-			}
-
-			var type = (e.type ? e.type.toLowerCase() : null);
-			var name = e.tagName.toLowerCase();
-			var v    = this.default_value_map[ e.name ];
-			if (v === null || typeof v === 'undefined')
-			{
-				v = "";
-			}
-
-			if (name == 'input' && type == 'file')
-			{
-				if (e.value)
-				{
-					return true;
-				}
-			}
-			else if (name == 'input' &&
-					 (type == 'password' || type == 'text' || type == 'file'))
-			{
-				if (e.value != v)
-				{
-					return true;
-				}
-			}
-			else if (name == 'input' &&
-					 (type == 'checkbox' || type == 'radio'))
-			{
-				var checked = (e.value == v);
-				if ((checked && !e.checked) || (!checked && e.checked))
-				{
-					return true;
-				}
-			}
-			else if ((name == 'select' && type == 'select-one') ||
-					 name == 'textarea')
-			{
-				if (e.value != v)
-				{
-					return true;
-				}
+				return true;
 			}
 		}
 
@@ -749,8 +800,30 @@ FormManager.prototype =
 	},
 
 	/**
+	 * Return the modified values.
+	 * 
+	 * @method getChanges
+	 * @return {Object} map of form element names to new values
+	 */
+	getChanges: function()
+	{
+		var result = {};
+		for (var i=0; i<this.form.elements.length; i++)
+		{
+			if (_isChanged.call(this, i))
+			{
+				var e            = this.form.elements[i];
+				result[ e.name ] = e.value;
+			}
+		}
+
+		return result;
+	},
+
+	/**
 	 * Prepare the form for display.
 	 * 
+	 * @method prepareForm
 	 * @return {boolean} <code>true</code> if both pre & post hooks are happy
 	 */
 	prepareForm: function()
@@ -772,6 +845,7 @@ FormManager.prototype =
 	/**
 	 * Hook called before <code>prepareForm()</code> executes.
 	 * 
+	 * @method prePrepareForm
 	 * @return {boolean} <code>false</code> cancels <code>prepareForm()</code>.
 	 */
 	prePrepareForm: function()
@@ -782,6 +856,7 @@ FormManager.prototype =
 	/**
 	 * Hook called after <code>prepareForm()</code> executes.
 	 * 
+	 * @method postPrepareForm
 	 * @return {boolean} Return value from this function is returned by <code>prepareForm()</code>.
 	 */
 	postPrepareForm: function()
@@ -792,6 +867,8 @@ FormManager.prototype =
 	/**
 	 * Set focus to first input field.  If a page contains multiple forms,
 	 * only call this for one of them.
+	 * 
+	 * @method initFocus
 	 */
 	initFocus: function()
 	{
@@ -825,7 +902,8 @@ FormManager.prototype =
 	},
 
 	/**
-	 * Validate the form.
+	 * @method validateForm
+	 * @return {Boolean} true if all validation checks passed
 	 */
 	validateForm: function()
 	{
@@ -900,11 +978,11 @@ FormManager.prototype =
 	},
 
 	/**
-	 * Hook called at the end of <code>validateForm()</code>.  This is the
-	 * best place to put holistic validations that touch multiple form
-	 * elements.
+	 * Hook called at the end of `validateForm()`.  This is the best place
+	 * to put holistic validations that touch multiple form elements.
 	 * 
-	 * @return {boolean} <code>false</code> if validation fails
+	 * @method postValidateForm
+	 * @return {boolean} `false` if validation fails
 	 */
 	postValidateForm: function(
 		/* DOM element */	form)
@@ -917,9 +995,12 @@ FormManager.prototype =
 	 */
 
 	/**
-	 * Register a button that can be disabled.  Buttons contained within
+	 * Register an object that can be disabled.  The object must support
+	 * the set('disabled', ...) API.  (The exception is DOM nodes, since
+	 * they are automatically wrapped in Y.Node.)  Buttons contained within
 	 * the form DOM element are automatically registered.
 	 * 
+	 * @method registerButton
 	 * @param el {String|Object} The selector for the element or the element itself
 	 */
 	registerButton: function(
@@ -927,13 +1008,14 @@ FormManager.prototype =
 	{
 		var info =
 		{
-			e: Y.one(el)
+			e: Y.Lang.isString(el) || el.tagName ? Y.one(el) : el
 		};
 
 		this.user_button_list.push(info);
 	},
 
 	/**
+	 * @method isFormEnabled
 	 * @return {boolean} <code>true</code> if form is enabled
 	 */
 	isFormEnabled: function()
@@ -943,6 +1025,8 @@ FormManager.prototype =
 
 	/**
 	 * Enable all the registered buttons.
+	 * 
+	 * @method enableForm
 	 */
 	enableForm: function()
 	{
@@ -951,6 +1035,8 @@ FormManager.prototype =
 
 	/**
 	 * Disable all the registered buttons.
+	 * 
+	 * @method disableForm
 	 */
 	disableForm: function()
 	{
@@ -960,6 +1046,7 @@ FormManager.prototype =
 	/**
 	 * Set the enabled state all the registered buttons.
 	 * 
+	 * @method setFormEnabled
 	 * @param enabled {boolean} <code>true</code> to enable the form, <code>false</code> to disable the form
 	 */
 	setFormEnabled: function(
@@ -985,6 +1072,7 @@ FormManager.prototype =
 	 */
 
 	/**
+	 * @method hasMessages
 	 * @return {boolean} <code>true</code> if there are any messages displayed, of any type
 	 */
 	hasMessages: function()
@@ -993,6 +1081,7 @@ FormManager.prototype =
 	},
 
 	/**
+	 * @method hasErrors
 	 * @return {boolean} <code>true</code> if there are any error messages displayed
 	 */
 	hasErrors: function()
@@ -1003,6 +1092,7 @@ FormManager.prototype =
 	/**
 	 * Get the message type displayed for the row containing the specified element.
 	 * 
+	 * @method getRowStatus
 	 * @param e {String|Object} The selector for the element or the element itself
 	 * @return {mixed} The status (String) or <code>false</code>.
 	 */
@@ -1015,6 +1105,8 @@ FormManager.prototype =
 
 	/**
 	 * Clear all messages in <code>status_node</code> and the form rows.
+	 * 
+	 * @method clearMessages
 	 */
 	clearMessages: function()
 	{
@@ -1027,26 +1119,15 @@ FormManager.prototype =
 			this.status_node.replaceClass(statusPattern(), FormManager.status_none_class);
 		}
 
-		for (var i=0; i<this.form.elements.length; i++)
+		Y.Array.each(this.form.elements, function(e)
 		{
-			var e = this.form.elements[i];
-
 			var name = e.tagName.toLowerCase();
 			var type = (e.type ? e.type.toLowerCase() : null);
-			if (name == 'button' || type == 'submit' || type == 'reset')
+			if (name != 'button' && type != 'submit' && type != 'reset')
 			{
-				continue;
+				FormManager.clearMessage(e);
 			}
-
-			var p = Y.one(e).getAncestorByClassName(FormManager.row_marker_class);
-			if (p && p.hasClass(rowStatusPattern()))
-			{
-				p.all('.'+FormManager.status_marker_class).set('innerHTML', '');
-				p.removeClass(rowStatusPattern());
-
-				p.all('.'+FormManager.field_marker_class).removeClass(rowStatusPattern());
-			}
-		}
+		});
 
 		Y.one(this.form).all('fieldset').removeClass(rowStatusPattern());
 	},
@@ -1056,10 +1137,11 @@ FormManager.prototype =
 	 * The message will only be displayed if no message with a higher
 	 * precedence is already visible. (see Y.FormManager.status_order)
 	 * 
+	 * @method displayMessage
 	 * @param e {String|Object} The selector for the element or the element itself
 	 * @param msg {String} The message
 	 * @param type {String} The message type (see Y.FormManager.status_order)
-	 * @param scroll {boolean} (Optional) <code>true</code> if the form row should be scrolled into view
+	 * @param [scroll] {boolean} `true` if the form row should be scrolled into view
 	 * @return {boolean} true if the message was displayed, false if a higher precedence message was already there
 	 */
 	displayMessage: function(
@@ -1068,55 +1150,8 @@ FormManager.prototype =
 		/* string */	type,
 		/* boolean */	scroll)
 	{
-		if (Y.Lang.isUndefined(scroll))
+		if (FormManager.displayMessage(e, msg, type, this.has_messages, scroll))
 		{
-			scroll = true;
-		}
-
-		e     = Y.one(e);
-		var p = e.getAncestorByClassName(FormManager.row_marker_class);
-		if (p && FormManager.statusTakesPrecendence(FormManager.getElementStatus(p), type))
-		{
-			var f = p.all('.'+FormManager.field_marker_class);
-			if (f)
-			{
-				f.removeClass(rowStatusPattern());
-			}
-
-			if (msg)
-			{
-				p.one('.'+FormManager.status_marker_class).set('innerHTML', msg);
-			}
-
-			var new_class = FormManager.row_status_prefix + type;
-			p.replaceClass(rowStatusPattern(), new_class);
-
-			f = e.getAncestorByClassName(FormManager.field_marker_class, true);
-			if (f)
-			{
-				f.replaceClass(rowStatusPattern(), new_class);
-			}
-
-			var fieldset = e.getAncestorByTagName('fieldset');
-			if (fieldset && FormManager.statusTakesPrecendence(FormManager.getElementStatus(fieldset), type))
-			{
-				fieldset.removeClass(rowStatusPattern());
-				fieldset.addClass(FormManager.row_status_prefix + type);
-			}
-
-			if (!this.has_messages && scroll)
-			{
-				p.scrollIntoView();
-				try
-				{
-					e.focus();
-				}
-				catch (ex)
-				{
-					// no way to determine in IE if this will fail
-				}
-			}
-
 			this.has_messages = true;
 			if (type == 'error')
 			{
@@ -1125,14 +1160,18 @@ FormManager.prototype =
 
 			return true;
 		}
-
-		return false;
+		else
+		{
+			return false;
+		}
 	},
 
 	/**
 	 * Displays a generic message in <code>status_node</code> stating that
 	 * the form data failed to validate.  Override this if you want to get
 	 * fancy.
+	 * 
+	 * @method notifyErrors
 	 */
 	notifyErrors: function()
 	{
@@ -1142,6 +1181,7 @@ FormManager.prototype =
 	/**
 	 * Display a message in <code>status_node</code>.
 	 * 
+	 * @method displayFormMessage
 	 * @param msg {String} The message
 	 * @param error {boolean} <code>true</code> if the message is an error
 	 * @param scroll {boolean} <code>true</code> if <code>status_node</code> should be scrolled into view
@@ -1177,20 +1217,21 @@ FormManager.prototype =
 			Y.log(msg, 'warn', 'FormManager');
 		}
 	}
-};
+});
 
-if (Y.FormManager)	// static data & functions from gallery-formmgr-css-validation
-{
-	for (var key in Y.FormManager)
-	{
-		if (Y.FormManager.hasOwnProperty(key))
-		{
-			FormManager[key] = Y.FormManager[key];
-		}
-	}
-}
+// static data & functions from gallery-formmgr-css-validation
+Y.aggregate(FormManager, Y.FormManager);
 
 Y.FormManager = FormManager;
 
 
-}, 'gallery-2011.04.13-22-38' ,{requires:['gallery-node-optimizations','gallery-formmgr-css-validation']});
+}, 'gallery-2013.04.03-19-53', {
+    "requires": [
+        "pluginhost-base",
+        "gallery-node-optimizations",
+        "gallery-formmgr-css-validation"
+    ],
+    "optional": [
+        "gallery-scrollintoview"
+    ]
+});

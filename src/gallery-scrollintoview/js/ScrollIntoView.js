@@ -1,15 +1,24 @@
 "use strict";
 
-/**********************************************************************
+/**
+ * @module gallery-scrollintoview
+ */
+
+/**
  * <p>Only scrolls the browser if the object is not currently visible.</p>
  * 
  * <p>This requires that all scrollable elements have position:relative.
  * Otherwise, this algorithm will skip over them with unpredictable
  * results.</p>
  * 
- * @chainable
+ * @main gallery-scrollintoview
+ * @class Node~scrollIntoView
  */
 
+/**
+ * @method scrollIntoView
+ * @chainable
+ */
 Y.Node.prototype.scrollIntoView = function()
 {
 	var ancestor = Y.Node.getDOMNode(this.get('offsetParent'));
@@ -42,9 +51,12 @@ Y.Node.prototype.scrollIntoView = function()
 		{
 			var hit_top = (ancestor.offsetParent === null);
 
-			var a = Y.one(ancestor);
-			if (ancestor.scrollWidth - a.horizMarginBorderPadding() > ancestor.clientWidth ||
-				ancestor.scrollHeight - a.vertMarginBorderPadding() > ancestor.clientHeight)
+			var a = Y.one(ancestor),
+				b = (Y.Node.getDOMNode(a) === Y.config.doc.body),
+				w = b ? Y.DOM.winWidth() : ancestor.clientWidth,
+				h = b ? Y.DOM.winHeight() : ancestor.clientHeight;
+			if (ancestor.scrollWidth - a.horizMarginBorderPadding() > w ||
+				ancestor.scrollHeight - a.vertMarginBorderPadding() > h)
 			{
 				break;
 			}
@@ -63,9 +75,9 @@ Y.Node.prototype.scrollIntoView = function()
 		var d =
 		{
 			top:    scrollY,
-			bottom: scrollY + ancestor.clientHeight,
+			bottom: scrollY + (hit_top ? Y.DOM.winHeight() : ancestor.clientHeight),
 			left:   scrollX,
-			right:  scrollX + ancestor.clientWidth
+			right:  scrollX + (hit_top ? Y.DOM.winWidth() : ancestor.clientWidth)
 		};
 
 		var dy = 0;

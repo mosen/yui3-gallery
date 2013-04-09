@@ -1,11 +1,15 @@
+/**
+ * @module gallery-checkboxgroups
+ */
+
 /**********************************************************************
  * At least one checkbox must be selected.  If the last one is turned off,
  * the active, adjacent one is turned on.  The exact algorithm is explained
  * in "Tog on Interface".  The checkboxes are assumed to be ordered in the
  * order they were added.
  * 
- * @module gallery-checkboxgroups
  * @class AtLeastOneCheckboxGroup
+ * @extends CheckboxGroup
  * @constructor
  * @param cb_list {String|Node|NodeList} The list of checkboxes to manage
  */
@@ -60,6 +64,11 @@ function getNextActiveIndex(
 
 Y.extend(AtLeastOneCheckboxGroup, CheckboxGroup,
 {
+	/**
+	 * @method enforceConstraints
+	 * @param cb_list {String|Object|Array} The list of checkboxes
+	 * @param index {Int} The index of the checkbox that changed
+	 */
 	enforceConstraints: function(
 		/* NodeList */	cb_list,
 		/* int */		index)
