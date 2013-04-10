@@ -1,0 +1,10 @@
+{
+    "gallery-datatable-footerview": {
+        "requires": [
+            "base-build",
+            "datatable-base",
+            "view"
+        ],
+        "skinnable" : true
+    }
+}

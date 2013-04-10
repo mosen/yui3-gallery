@@ -1,0 +1,10 @@
+{
+  "name": "gallery-datatable-footerview",
+  "builds": {
+    "gallery-datatable-footerview": {
+      "jsfiles": [
+        "dt_footerview.js"
+      ]
+    }
+  }
+}
