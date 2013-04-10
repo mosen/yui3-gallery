@@ -1,0 +1,9 @@
+{
+    "gallery-datatable-checkbox-select": {
+        "requires": [
+            "datatable-base",
+            "datatable-mutable",
+            "event-custom"
+        ]
+    }
+}

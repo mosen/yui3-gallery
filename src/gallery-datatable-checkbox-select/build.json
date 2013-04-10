@@ -1,0 +1,10 @@
+{
+    "name": "gallery-datatable-checkbox-select",
+    "builds": {
+        "gallery-datatable-checkbox-select": {
+            "jsfiles": [
+                "gallery-datatable-checkbox-select.js"
+            ]
+        }
+    }
+}
