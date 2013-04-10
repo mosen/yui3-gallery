@@ -3,7 +3,8 @@
         "requires": [
             "base-build",
             "datatable-base",
-            "view"
+            "view",
+            "datatype-date"
         ],
         "skinnable" : true
     }
