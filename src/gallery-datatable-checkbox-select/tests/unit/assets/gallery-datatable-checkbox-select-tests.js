@@ -8,7 +8,16 @@ YUI.add('gallery-datatable-checkbox-select-tests', function (Y) {
         setUp: function() {
 
             this.list = new Y.ModelList();
+
             this.dt = new Y.DataTable({
+                columns: [
+                    {
+                        key: "id",
+                        label: "id",
+                        width: "50px"
+                    }
+                ],
+                sortable: true,
                 modelList: this.list,
                 primaryKeys: [ 'id' ],
                 checkboxSelectMode: true
@@ -20,6 +29,19 @@ YUI.add('gallery-datatable-checkbox-select-tests', function (Y) {
             this.list.destroy();
         },
 
+        /*
+         * This error is thrown when checkbox select calls syncUI before the table structure is fully rendered.
+         * datatable-message tries to render the `no rows available` message into the _tableNode which doesn't exist
+         * yet.
+         * ---
+         * TypeError: this._tableNode is undefined
+         *
+         * this._tableNode.insertBefore(this._messageNode, this._tbodyNode);
+         * datatable-message.js: 228
+         * ---
+         *
+         * This is a regression test for that bug.
+         */
         "BUG#4: datatable-message throws a TypeError with empty ModelList and checkbox-select enabled": function() {
             this.dt.render();
         }
@@ -28,4 +50,4 @@ YUI.add('gallery-datatable-checkbox-select-tests', function (Y) {
 
     Y.Test.Runner.add(suite);
 
-}, '@VERSION@', {requires: ['gallery-datatable-checkbox-select', 'test']});
+}, '@VERSION@', {requires: ['gallery-datatable-checkbox-select', 'datatable', 'test']});

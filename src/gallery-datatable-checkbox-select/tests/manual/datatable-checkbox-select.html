@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>gallery-datatable-checkbox-select tests</title>
+</head>
+<body lang="en" class="yui3-skin-sam">
+<script src="http://yui.yahooapis.com/3.9.1/build/yui/yui-min.js"></script>
+<script>
+    YUI({
+        coverage: ['gallery-datatable-checkbox-select'],
+        filter: (window.location.search.match(/[?&]filter=([^&]+)/) || [])[1] || 'raw',
+        filters: {
+            "gallery-datatable-checkbox-select" : "debug"
+        },
+        groups: {
+            subject: {
+                combine: false,
+                base: '../../../../build/',
+                root: '../../../../build',
+                modules: {
+                    "gallery-datatable-checkbox-select": {
+                        path: "gallery-datatable-checkbox-select/gallery-datatable-checkbox-select-min.js",
+                        requires: [
+                            "datatable-base",
+                            "datatable-mutable",
+                            "event-custom"
+                        ]
+                    }
+                }
+            }
+        }
+    }).use(
+            'datatable',
+            'gallery-datatable-checkbox-select',
+            'app',
+            function (Y) {
+                var dt = new Y.DataTable({
+                    columns: [
+                        {
+                            key: "id",
+                            label: "id",
+                            width: "50px"
+                        }
+                    ],
+                    sortable: true,
+                    modelList: new Y.ModelList(),
+                    primaryKeys: [ 'id' ],
+                    checkboxSelectMode: true
+                });
+
+                dt.render();
+            }
+    );
+</script>
+</body>
+</html>
