@@ -3,7 +3,7 @@
     "builds": {
         "gallery-datatable-checkbox-select": {
             "jsfiles": [
-                "gallery-datatable-checkbox-select.js"
+                "datatable-checkbox-select.js"
             ]
         }
     }

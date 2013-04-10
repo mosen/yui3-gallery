@@ -1,4 +1,4 @@
-YUI.add('gallery-datatable-checkbox-select', function(Y) {
+YUI.add('gallery-datatable-checkbox-select', function (Y, NAME) {
 
 /**
 A DataTable class extension that adds capability to provide a "checkbox" (INPUT[type=checkbox]) selection
@@ -397,7 +397,10 @@ Y.mix( DtCheckboxSelect.prototype, {
         // only add this column if it is nonexistent in the column already ...
         if(!this.getColumn(this.colSelect) ) {
             this.addColumn(colSel,0);
-            this.syncUI();
+
+            if (this.get('rendered') === true) {
+                this.syncUI(); // BUGFIX: stlsmiths/yui3-gallery#7: Do not call sync before the table has been rendered.
+            }
         }
 
     },
@@ -656,4 +659,4 @@ Y.DataTable.CheckboxSelect = DtCheckboxSelect;
 Y.Base.mix(Y.DataTable, [Y.DataTable.CheckboxSelect]);
 
 
-}, 'gallery-2012.09.12-20-02' ,{requires:['datatable-base','datatable-mutable','event-custom'], skinnable:false});
+}, '@VERSION@', {"requires": ["datatable-base", "datatable-mutable", "event-custom"]});

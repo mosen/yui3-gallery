@@ -395,7 +395,10 @@ Y.mix( DtCheckboxSelect.prototype, {
         // only add this column if it is nonexistent in the column already ...
         if(!this.getColumn(this.colSelect) ) {
             this.addColumn(colSel,0);
-            this.syncUI();
+
+            if (this.get('rendered') === true) {
+                this.syncUI(); // BUGFIX: stlsmiths/yui3-gallery#7: Do not call sync before the table has been rendered.
+            }
         }
 
     },
@@ -407,7 +410,10 @@ Y.mix( DtCheckboxSelect.prototype, {
      **/
     _uiRemoveCheckboxTH: function(){
         this.removeColumn(this.colSelect);
-        this.syncUI();
+
+        if (this.get('rendered') === true) {
+            this.syncUI(); // BUGFIX: stlsmiths/yui3-gallery#7: Do not call sync before the table has been rendered.
+        }
     },
 
     /**

@@ -42,7 +42,7 @@ YUI.add('gallery-datatable-checkbox-select-tests', function (Y) {
          *
          * This is a regression test for that bug.
          */
-        "BUG#4: datatable-message throws a TypeError with empty ModelList and checkbox-select enabled": function() {
+        "bug: github.com/stlsmiths/yui3-gallery#7, TypeError thrown after gallery-datatable-checkbox-select calls syncUI() manually": function() {
             this.dt.render();
         }
 
